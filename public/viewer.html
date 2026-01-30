@@ -552,13 +552,6 @@ function updatePresenceStatus() {
   const wasActive = isViewerActive;
   isViewerActive = !document.hidden;
   if (wasActive !== isViewerActive) {
-    if (!isViewerActive) {
-      char.style.filter = 'brightness(0.3) grayscale(0.5)';
-      char.style.opacity = '0.5';
-    } else {
-      char.style.filter = 'brightness(1) grayscale(0)';
-      char.style.opacity = '1';
-    }
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({
         type: 'viewerPresence',
@@ -635,15 +628,12 @@ function handleWebSocketMessage(e) {
     }
     
     if (data.type === 'presenceState') {
-      const chatPanel = document.getElementById('chatPanel');
       if (!data.data.controllerActive) {
-        chatPanel.style.filter = 'brightness(0.3)';
-        chatPanel.style.pointerEvents = 'none';
-        chatPanel.style.opacity = '0.5';
+        char.style.filter = 'brightness(0.3) grayscale(0.5)';
+        char.style.opacity = '0.5';
       } else {
-        chatPanel.style.filter = 'brightness(1)';
-        chatPanel.style.pointerEvents = 'auto';
-        chatPanel.style.opacity = '1';
+        char.style.filter = 'brightness(1) grayscale(0)';
+        char.style.opacity = '1';
       }
       return;
     }
