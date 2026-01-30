@@ -57,7 +57,7 @@ html, body {
 
 #characterNameBox {
   position: absolute;
-  top: -15px;
+  top: -25px;
   left: 30px;
   background: linear-gradient(135deg, #1a4d7a 0%, #2a6a9a 100%);
   padding: 8px 20px;
@@ -82,7 +82,7 @@ html, body {
   white-space: pre-wrap;
   overflow-wrap: break-word;
   overflow: hidden;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+  text-shadow: 3px 3px 6px rgba(0,0,0,0.9), 1px 1px 2px rgba(0,0,0,0.8);
   margin-top: 10px;
 }
 
@@ -275,6 +275,71 @@ img {
   -webkit-user-drag: none;
   user-select: none;
 }
+
+/* Typewriter text effects */
+.text-effect-wavy {
+  display: inline-block;
+  animation: wave 1s ease-in-out infinite;
+}
+
+@keyframes wave {
+  0%, 100% { transform: translateY(0px); }
+  25% { transform: translateY(-3px); }
+  75% { transform: translateY(3px); }
+}
+
+.text-effect-shake {
+  display: inline-block;
+  animation: shake 0.3s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px) rotate(-1deg); }
+  75% { transform: translateX(2px) rotate(1deg); }
+}
+
+.text-effect-fade {
+  display: inline-block;
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.text-effect-glow {
+  display: inline-block;
+  animation: glow 1.5s ease-in-out infinite;
+}
+
+@keyframes glow {
+  0%, 100% { text-shadow: 3px 3px 6px rgba(0,0,0,0.9), 1px 1px 2px rgba(0,0,0,0.8), 0 0 10px rgba(255,255,255,0.3); }
+  50% { text-shadow: 3px 3px 6px rgba(0,0,0,0.9), 1px 1px 2px rgba(0,0,0,0.8), 0 0 20px rgba(255,255,255,0.8); }
+}
+
+.text-effect-bounce {
+  display: inline-block;
+  animation: bounce 0.6s ease;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-8px); }
+  50% { transform: translateY(-4px); }
+  75% { transform: translateY(-2px); }
+}
+
+.text-effect-float {
+  display: inline-block;
+  animation: float 2s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+}
 </style>
 </head>
 <body>
@@ -452,14 +517,31 @@ function typewriterEffect(text, callback) {
   isTyping = true;
   continueIndicator.style.display = 'none';
   let charIndex = 0;
-  dialogueText.textContent = '';
+  dialogueText.innerHTML = '';
+  
+  const textEffect = currentSettings.textEffect || 'none';
   
   function typeNextChar() {
     if (charIndex < text.length) {
-      dialogueText.textContent += text[charIndex];
-      if (text[charIndex] !== ' ' && text[charIndex] !== '\n') {
+      const char = text[charIndex];
+      
+      if (char === '\n') {
+        dialogueText.innerHTML += '<br>';
+      } else if (char === ' ') {
+        dialogueText.innerHTML += ' ';
+      } else {
+        const span = document.createElement('span');
+        span.textContent = char;
+        
+        if (textEffect !== 'none') {
+          span.className = 'text-effect-' + textEffect;
+          span.style.animationDelay = (charIndex * 0.05) + 's';
+        }
+        
+        dialogueText.appendChild(span);
         playTypeSound();
       }
+      
       charIndex++;
       typewriterTimeout = setTimeout(typeNextChar, currentSettings.typeSpeed);
     } else {
@@ -490,7 +572,27 @@ function showDialoguePage() {
 dialogueBox.addEventListener('click', () => {
   if (isTyping) {
     clearTimeout(typewriterTimeout);
-    dialogueText.textContent = dialoguePages[currentPage];
+    dialogueText.innerHTML = '';
+    const text = dialoguePages[currentPage];
+    const textEffect = currentSettings.textEffect || 'none';
+    
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      if (char === '\n') {
+        dialogueText.innerHTML += '<br>';
+      } else if (char === ' ') {
+        dialogueText.innerHTML += ' ';
+      } else {
+        const span = document.createElement('span');
+        span.textContent = char;
+        if (textEffect !== 'none') {
+          span.className = 'text-effect-' + textEffect;
+          span.style.animationDelay = (i * 0.05) + 's';
+        }
+        dialogueText.appendChild(span);
+      }
+    }
+    
     isTyping = false;
     if (currentPage < dialoguePages.length - 1) {
       continueIndicator.style.display = 'block';
