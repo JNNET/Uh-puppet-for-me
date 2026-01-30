@@ -645,8 +645,7 @@ function addChatMessage(message, sender, timestamp) {
     chatHistory.removeChild(chatHistory.firstChild);
   }
   requestAnimationFrame(() => {
-    const chatPanel = document.getElementById('chatPanel');
-    chatPanel.scrollTop = chatPanel.scrollHeight;
+    chatHistory.scrollTop = chatHistory.scrollHeight;
   });
 }
 
