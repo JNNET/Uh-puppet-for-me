@@ -3,454 +3,78 @@
 <head>
 <meta charset="UTF-8">
 <title>Controller</title>
-
 <style>
-body {
-  margin: 0;
-  font-family: sans-serif;
-  background: #111;
-  color: #eee;
-  display: flex;
-  height: 100vh;
-}
-
-#sidebar {
-  width: 320px;
-  overflow-y: auto;
-  padding: 10px;
-  background: #1a1a1a;
-}
-
-.emotion {
-  margin-bottom: 5px;
-}
-
-.emotion h3 {
-  margin: 0;
-  padding: 10px;
-  font-size: 14px;
-  background: #2a2a2a;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: background 0.2s;
-}
-
-.emotion h3:hover {
-  background: #333;
-}
-
-.emotion h3.active {
-  background: #3a5;
-}
-
-.category {
-  margin-bottom: 5px;
-}
-
-.category h3 {
-  margin: 0;
-  padding: 10px;
-  font-size: 14px;
-  background: #1a5a3a;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: background 0.2s;
-}
-
-.category h3:hover {
-  background: #256b4a;
-}
-
-.category h3.active {
-  background: #2a8;
-}
-
-.category-content {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.3s ease-out;
-  padding: 0;
-}
-
-.category-content.open {
-  max-height: 2000px;
-  padding: 5px 0;
-}
-
-.sub-emotion {
-  margin-bottom: 5px;
-}
-
-.sub-emotion h4 {
-  margin: 4px 0;
-}
-
-.sub-emotion h4:hover {
-  background: #333 !important;
-}
-
-.sub-emotion h4.active {
-  background: #3a5 !important;
-}
-
-.emotion-content {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.3s ease-out;
-  padding: 0 5px;
-}
-
-.emotion-content.open {
-  max-height: 1000px;
-  padding: 10px 5px;
-}
-
-.thumb {
-  width: 96px;
-  height: 96px;
-  object-fit: cover;
-  object-position: center top;
-  cursor: pointer;
-  margin: 3px;
-  border: 2px solid transparent;
-}
-
-.thumb:hover {
-  border-color: #4af;
-  transform: scale(1.1);
-  transition: all 0.2s;
-}
-
-.thumb.active {
-  border-color: #3a5;
-  box-shadow: 0 0 10px #3a5;
-}
-
-#dialogueSection {
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid #333;
-}
-
-#dialogueSection label {
-  font-size: 13px;
-  color: #ccc;
-}
-
-#dialogueSection input,
-#dialogueSection select {
-  background: #222;
-  color: #eee;
-  border: 1px solid #444;
-  border-radius: 3px;
-  padding: 4px;
-  font-family: sans-serif;
-}
-
-#backgroundSection {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin-bottom: 10px;
-}
-
-#backgroundSection button {
-  padding: 8px 12px;
-  background: #2a2a2a;
-  color: #eee;
-  border: 2px solid transparent;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 13px;
-  transition: all 0.2s;
-}
-
-#backgroundSection button:hover {
-  background: #333;
-  border-color: #4af;
-}
-
-#backgroundSection button.clear {
-  background: #c44;
-}
-
-#backgroundSection button.clear:hover {
-  background: #d55;
-  border-color: #f66;
-}
-
-.settings-toggle {
-  width: 100%;
-  padding: 8px 12px;
-  background: #2a2a2a;
-  color: #eee;
-  border: 1px solid #444;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 13px;
-  margin-top: 10px;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.settings-toggle:hover {
-  background: #333;
-  border-color: #4af;
-}
-
-.settings-panel {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.3s ease-out;
-  margin-top: 10px;
-}
-
-.settings-panel.open {
-  max-height: 2000px;
-}
-
-#dialogueSection h2 {
-  margin-top: 0;
-}
-
-#dialogueInput {
-  width: 100%;
-  min-height: 80px;
-  background: #222;
-  color: #eee;
-  border: 1px solid #444;
-  border-radius: 4px;
-  padding: 8px;
-  font-family: sans-serif;
-  font-size: 14px;
-  resize: vertical;
-  box-sizing: border-box;
-}
-
-#dialogueButtons {
-  margin-top: 10px;
-  display: flex;
-  gap: 8px;
-}
-
-#dialogueButtons button {
-  flex: 1;
-  padding: 8px;
-  background: #2a5;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-#dialogueButtons button:hover {
-  background: #3b6;
-}
-
-#dialogueButtons button.clear {
-  background: #c44;
-}
-
-#dialogueButtons button.clear:hover {
-  background: #d55;
-}
-
-#previewViewport {
-  flex: 1;
-  background: #000;
-  position: relative;
-  overflow: hidden;
-}
-
-#controllerChatPanel {
-  position: absolute;
-  right: 20px;
-  top: 20px;
-  width: 340px;
-  height: 680px;
-  background: #000;
-  border-radius: 35px;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), inset 0 0 0 8px #1a1a1a;
-  border: 8px solid #2a2a2a;
-  overflow: hidden;
-}
-
-#controllerChatPanel::before {
-  content: '';
-  position: absolute;
-  top: 15px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80px;
-  height: 6px;
-  background: #333;
-  border-radius: 3px;
-  z-index: 10;
-}
-
-#controllerChatPanel::after {
-  content: '';
-  position: absolute;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%) translateX(-50px);
-  width: 12px;
-  height: 12px;
-  background: #1a1a1a;
-  border-radius: 50%;
-  z-index: 10;
-}
-
-#controllerChatPanel h3 {
-  margin: 0;
-  padding: 40px 20px 15px 20px;
-  background: #0a0a0a;
-  border-bottom: 1px solid #222;
-  font-size: 16px;
-  color: #888;
-  text-align: center;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-}
-
-#controllerChatHistory {
-  flex: 1;
-  overflow-y: auto;
-  padding: 15px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  background: #000;
-}
-
-#controllerChatHistory::-webkit-scrollbar {
-  width: 6px;
-}
-
-#controllerChatHistory::-webkit-scrollbar-track {
-  background: #0a0a0a;
-}
-
-#controllerChatHistory::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 3px;
-}
-
-.controller-chat-message {
-  max-width: 75%;
-  padding: 12px 16px;
-  border-radius: 20px;
-  word-wrap: break-word;
-  font-size: 13px;
-  line-height: 1.4;
-  animation: slideIn 0.3s ease-out;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.controller-chat-message.controller {
-  background: linear-gradient(135deg, #0084ff 0%, #0066cc 100%);
-  color: white;
-  align-self: flex-start;
-  border-bottom-left-radius: 6px;
-}
-
-.controller-chat-message.viewer {
-  background: linear-gradient(135deg, #3a3a3a 0%, #2a2a2a 100%);
-  color: #e5e5e5;
-  align-self: flex-end;
-  border-bottom-right-radius: 6px;
-}
-
-.controller-chat-message .timestamp {
-  font-size: 10px;
-  opacity: 0.7;
-  margin-top: 4px;
-  display: block;
-}
-
-#previewCamera {
-  position: absolute;
-  width: 1280px;
-  height: 720px;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-}
-
-#previewBackground {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background-size: cover;
-  background-position: center;
-}
-
-#previewCharacter {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform-origin: center;
-}
-
-#previewDialogueBox {
-  position: absolute;
-  bottom: 40px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 1100px;
-  min-height: 140px;
-  background: rgba(0, 0, 0, 0.85);
-  border: 3px solid #fff;
-  border-radius: 8px;
-  padding: 20px 30px;
-  box-sizing: border-box;
-  display: none;
-  pointer-events: none;
-}
-
-#previewDialogueBox.visible {
-  display: block;
-}
-
-#previewDialogueText {
-  color: #fff;
-  font-family: 'Arial', sans-serif;
-  font-size: 24px;
-  line-height: 1.6;
-  max-height: 76.8px;
-  overflow: hidden;
-  word-wrap: break-word;
-  white-space: pre-wrap;
-  overflow-wrap: break-word;
-}
-
-img {
-  user-drag: none;
-  -webkit-user-drag: none;
-  user-select: none;
-}
+body{margin:0;font-family:sans-serif;background:#111;color:#eee;display:flex;height:100vh;flex-direction:column;}
+#sidebar{width:320px;height:calc(100vh - 200px);overflow-y:auto;padding:10px;background:#1a1a1a;}
+.emotion,.category{margin-bottom:5px;}
+.emotion h3,.category h3{margin:0;padding:10px;font-size:14px;background:#2a2a2a;cursor:pointer;border-radius:4px;transition:background .2s;}
+.emotion h3:hover,.category h3:hover{background:#333;}
+.emotion h3.active,.category h3.active{background:#3a5;}
+.category h3{background:#1a5a3a;}
+.category h3:hover{background:#256b4a;}
+.category h3.active{background:#2a8;}
+.emotion-content,.category-content{max-height:0;overflow:hidden;transition:max-height .3s ease-out;padding:0 5px;display:flex;flex-wrap:wrap;}
+.emotion-content.open,.category-content.open{max-height:2000px;padding:10px 5px;}
+.sub-emotion{margin-bottom:5px;width:100%;}
+.sub-emotion h4{margin:4px 0;padding:8px;font-size:13px;background:#2a2a2a;cursor:pointer;border-radius:4px;margin-left:10px;}
+.sub-emotion h4:hover{background:#333!important;}
+.sub-emotion h4.active{background:#3a5!important;}
+.thumb{width:96px;height:96px;object-fit:cover;object-position:center top;cursor:pointer;margin:4px;border:2px solid transparent;flex-shrink:0;}
+.thumb:hover{border-color:#4af;transform:scale(1.1);transition:all .2s;}
+.thumb.active{border-color:#3a5;box-shadow:0 0 10px #3a5;}
+#backgroundSection,#musicSection,#soundSection{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0;}
+#backgroundSection button,#musicSection button,#soundSection button{padding:8px 12px;background:#2a2a2a;color:#eee;border:2px solid transparent;border-radius:4px;cursor:pointer;font-size:13px;transition:all .2s;}
+#backgroundSection button:hover,#musicSection button:hover,#soundSection button:hover{background:#333;border-color:#4af;}
+#backgroundSection button.clear{background:#c44;}
+#backgroundSection button.clear:hover{background:#d55;border-color:#f66;}
+.settings-toggle{width:100%;padding:8px 12px;background:#2a2a2a;color:#eee;border:1px solid #444;border-radius:4px;cursor:pointer;font-size:13px;margin-top:10px;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.settings-toggle:hover{background:#333;border-color:#4af;}
+.settings-panel{max-height:0;overflow:hidden;transition:max-height .3s ease-out;margin-top:10px;}
+.settings-panel.open{max-height:2000px;}
+.settings-panel label{display:block;margin-bottom:8px;font-size:13px;color:#ccc;}
+.settings-panel input,.settings-panel select{background:#222;color:#eee;border:1px solid #444;border-radius:3px;padding:4px;font-family:sans-serif;width:100%;box-sizing:border-box;margin-top:5px;}
+.settings-panel input[type="number"]{width:80px;}
+.settings-panel input[type="range"]{width:100%;}
+#fixedDialogueInput{position:fixed;bottom:0;left:0;width:320px;background:#0a0a0a;padding:15px;border-top:3px solid #3a5;z-index:1000;box-shadow:0 -4px 12px rgba(0,0,0,0.5);}
+#fixedDialogueInput h3{margin:0 0 10px 0;color:#3a5;font-size:16px;}
+#characterNameInput,#dialogueInput{width:100%;background:#222;color:#eee;border:1px solid #444;border-radius:4px;padding:8px;font-family:sans-serif;font-size:14px;box-sizing:border-box;margin-bottom:8px;}
+#characterNameInput{height:35px;}
+#dialogueInput{min-height:60px;resize:vertical;}
+#dialogueButtons{display:flex;gap:8px;}
+#dialogueButtons button{flex:1;padding:8px;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:14px;}
+#dialogueButtons button:first-child{background:#2a5;}
+#dialogueButtons button:first-child:hover{background:#3b6;}
+#dialogueButtons button.clear{background:#c44;}
+#dialogueButtons button.clear:hover{background:#d55;}
+#mainContent{display:flex;flex:1;overflow:hidden;}
+#previewViewport{flex:1;background:#000;position:relative;overflow:hidden;}
+#previewCamera{position:absolute;width:1280px;height:720px;left:50%;top:50%;transform:translate(-50%,-50%);}
+#previewBackground{position:absolute;width:100%;height:100%;background-size:cover;background-position:center;}
+#previewCharacter{position:absolute;left:50%;top:50%;transform-origin:center;}
+#previewDialogueBox{position:absolute;background:linear-gradient(180deg,rgba(0,0,0,.95) 0%,rgba(10,10,30,.95) 100%);border:3px solid rgba(255,255,255,.8);border-radius:12px;padding:20px 30px;box-sizing:border-box;display:none;pointer-events:none;box-shadow:0 8px 32px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.1);}
+#previewDialogueBox.visible{display:block;}
+#previewCharacterNameBox{position:absolute;top:-15px;left:30px;background:linear-gradient(135deg,#1a4d7a 0%,#2a6a9a 100%);padding:8px 20px;border-radius:8px;border:2px solid rgba(255,255,255,.9);box-shadow:0 4px 12px rgba(0,0,0,.5);}
+#previewCharacterName{color:#fff;font-family:Georgia,serif;font-size:18px;font-weight:bold;text-shadow:2px 2px 4px rgba(0,0,0,.8);}
+#previewDialogueText{color:#fff;line-height:1.6;word-wrap:break-word;white-space:pre-wrap;overflow-wrap:break-word;overflow:hidden;text-shadow:2px 2px 4px rgba(0,0,0,.8);margin-top:10px;}
+#controllerChatPanel{position:absolute;right:20px;top:20px;width:340px;height:680px;background:#000;border-radius:35px;display:flex;flex-direction:column;box-shadow:0 8px 24px rgba(0,0,0,.8),inset 0 0 0 8px #1a1a1a;border:8px solid #2a2a2a;overflow:hidden;transition:filter .3s,opacity .3s;}
+#controllerChatPanel::before{content:'';position:absolute;top:15px;left:50%;transform:translateX(-50%);width:80px;height:6px;background:#333;border-radius:3px;z-index:10;}
+#controllerChatPanel::after{content:'';position:absolute;top:10px;left:50%;transform:translateX(-50%) translateX(-50px);width:12px;height:12px;background:#1a1a1a;border-radius:50%;z-index:10;}
+#controllerChatPanel h3{margin:0;padding:40px 20px 15px 20px;background:#0a0a0a;border-bottom:1px solid #222;font-size:16px;color:#888;text-align:center;font-weight:500;}
+#controllerChatHistory{flex:1;overflow-y:auto;padding:15px;display:flex;flex-direction:column;gap:8px;background:#000;}
+#controllerChatHistory::-webkit-scrollbar{width:6px;}
+#controllerChatHistory::-webkit-scrollbar-track{background:#0a0a0a;}
+#controllerChatHistory::-webkit-scrollbar-thumb{background:#333;border-radius:3px;}
+.controller-chat-message{max-width:75%;padding:12px 16px;border-radius:20px;word-wrap:break-word;font-size:13px;line-height:1.4;animation:slideIn .3s ease-out;box-shadow:0 2px 4px rgba(0,0,0,.3);}
+@keyframes slideIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.controller-chat-message.controller{background:linear-gradient(135deg,#0084ff 0%,#0066cc 100%);color:white;align-self:flex-start;border-bottom-left-radius:6px;}
+.controller-chat-message.viewer{background:linear-gradient(135deg,#3a3a3a 0%,#2a2a2a 100%);color:#e5e5e5;align-self:flex-end;border-bottom-right-radius:6px;}
+.controller-chat-message .timestamp{font-size:10px;opacity:.7;margin-top:4px;display:block;}
+img{user-drag:none;-webkit-user-drag:none;user-select:none;}
 </style>
 </head>
-
 <body>
 
+<div id="mainContent">
 <div id="sidebar">
   <h2>Background</h2>
   <button onclick="toggleSettings('backgroundSettings')" class="settings-toggle">⚙️ Settings</button>
@@ -458,67 +82,29 @@ img {
     <div id="backgroundSection"></div>
   </div>
   
-  <div id="dialogueSection">
-    <h2>Dialogue</h2>
-    <textarea id="dialogueInput" placeholder="Type dialogue here..."></textarea>
-    <div id="dialogueButtons">
-      <button onclick="setDialogue()">Show Dialogue</button>
-      <button class="clear" onclick="clearDialogue()">Clear</button>
-    </div>
-    
-    <button onclick="toggleSettings('dialogueSettings')" class="settings-toggle" style="margin-top: 15px;">⚙️ Settings</button>
-    <div id="dialogueSettings" class="settings-panel">
-      <label style="display: block; margin-bottom: 8px;">
-        Typewriter Speed (ms per character):
-        <input type="number" id="typeSpeed" value="50" min="0" max="200" style="width: 60px; margin-left: 5px;">
-      </label>
-      
-      <label style="display: block; margin-bottom: 8px;">
-        Font:
-        <select id="fontFamily" style="margin-left: 5px;">
-          <option value="Arial">Arial</option>
-          <option value="Georgia">Georgia</option>
-          <option value="'Courier New'">Courier New</option>
-          <option value="'Times New Roman'">Times New Roman</option>
-          <option value="Verdana">Verdana</option>
-          <option value="'Comic Sans MS'">Comic Sans MS</option>
-        </select>
-      </label>
-      
-      <label style="display: block; margin-bottom: 8px;">
-        Font Size (px):
-        <input type="number" id="fontSize" value="24" min="12" max="48" style="width: 60px; margin-left: 5px;">
-      </label>
-      
-      <label style="display: block; margin-bottom: 8px;">
-        Box Width (px):
-        <input type="number" id="boxWidth" value="1100" min="400" max="1200" style="width: 80px; margin-left: 5px;">
-      </label>
-      
-      <label style="display: block; margin-bottom: 8px;">
-        Box Height (px):
-        <input type="number" id="boxHeight" value="140" min="80" max="300" style="width: 80px; margin-left: 5px;">
-      </label>
-      
-      <label style="display: block; margin-bottom: 8px;">
-        Border Radius (px):
-        <input type="number" id="borderRadius" value="8" min="0" max="50" style="width: 60px; margin-left: 5px;">
-      </label>
-      
-      <label style="display: block; margin-bottom: 8px;">
-        Horizontal Position (%):
-        <input type="number" id="positionX" value="50" min="0" max="100" style="width: 60px; margin-left: 5px;">
-      </label>
-      
-      <label style="display: block; margin-bottom: 8px;">
-        Vertical Position (px from bottom):
-        <input type="number" id="positionY" value="40" min="0" max="400" style="width: 60px; margin-left: 5px;">
-      </label>
-      
-      <button onclick="applyDialogueSettings()" style="width: 100%; margin-top: 10px; padding: 8px; background: #3a5; color: #fff; border: none; border-radius: 4px; cursor: pointer;">
-        Apply Settings
-      </button>
-    </div>
+  <h2 style="margin-top:20px">Music & Sound</h2>
+  <button onclick="toggleSettings('musicSettings')" class="settings-toggle">⚙️ Settings</button>
+  <div id="musicSettings" class="settings-panel">
+    <label>Background Music:<select id="musicSelect" onchange="updateMusic()"><option value="">None</option></select></label>
+    <label>Volume:<input type="range" id="volumeSlider" min="0" max="100" value="50" oninput="updateVolume()"><span id="volumeDisplay">50%</span></label>
+    <label>Typewriter Sound:<select id="soundSelect" onchange="updateSound()"><option value="">Default (Synthesized)</option></select></label>
+  </div>
+  
+  <h2 style="margin-top:20px">Characters</h2>
+  <div id="spritesContainer"></div>
+  
+  <h2 style="margin-top:20px">Dialogue Settings</h2>
+  <button onclick="toggleSettings('dialogueSettingsPanel')" class="settings-toggle">⚙️ Settings</button>
+  <div id="dialogueSettingsPanel" class="settings-panel">
+    <label>Typewriter Speed (ms):<input type="number" id="typeSpeed" value="50" min="0" max="200"></label>
+    <label>Font:<select id="fontFamily"><option value="Arial">Arial</option><option value="Georgia">Georgia</option><option value="'Courier New'">Courier New</option><option value="'Times New Roman'">Times New Roman</option><option value="Verdana">Verdana</option></select></label>
+    <label>Font Size (px):<input type="number" id="fontSize" value="24" min="12" max="48"></label>
+    <label>Box Width (px):<input type="number" id="boxWidth" value="800" min="400" max="1200"></label>
+    <label>Box Height (px):<input type="number" id="boxHeight" value="160" min="80" max="300"></label>
+    <label>Border Radius (px):<input type="number" id="borderRadius" value="8" min="0" max="50"></label>
+    <label>Horizontal Position (%):<input type="number" id="positionX" value="35" min="0" max="100"></label>
+    <label>Vertical Position (px from bottom):<input type="number" id="positionY" value="40" min="0" max="400"></label>
+    <button onclick="applyDialogueSettings()" style="width:100%;margin-top:10px;padding:8px;background:#3a5;color:#fff;border:none;border-radius:4px;cursor:pointer;">Apply Settings</button>
   </div>
 </div>
 
@@ -527,619 +113,27 @@ img {
     <div id="previewBackground"></div>
     <img id="previewCharacter">
     <div id="previewDialogueBox">
+      <div id="previewCharacterNameBox"><div id="previewCharacterName"></div></div>
       <div id="previewDialogueText"></div>
     </div>
   </div>
-  
-  <!-- Chat History Panel -->
   <div id="controllerChatPanel">
     <h3>Chat History</h3>
     <div id="controllerChatHistory"></div>
   </div>
 </div>
+</div>
+
+<div id="fixedDialogueInput">
+  <h3>Dialogue Control</h3>
+  <input type="text" id="characterNameInput" placeholder="Character Name">
+  <textarea id="dialogueInput" placeholder="Type dialogue here..."></textarea>
+  <div id="dialogueButtons">
+    <button onclick="setDialogue()">Show Dialogue</button>
+    <button class="clear" onclick="clearDialogue()">Clear</button>
+  </div>
+</div>
 
 <script>
-const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-const wsHost = window.location.host || 'localhost:8080';
-let ws;
-let reconnectAttempts = 0;
-const maxReconnectAttempts = 10;
-const reconnectDelay = 3000; // 3 seconds
-
-function connectWebSocket() {
-  ws = new WebSocket(`${wsProtocol}//${wsHost}`);
-  
-  ws.onopen = () => {
-    console.log('WebSocket connected');
-    reconnectAttempts = 0;
-    
-    // Show connection status
-    document.body.style.borderTop = '3px solid green';
-    setTimeout(() => {
-      document.body.style.borderTop = '';
-    }, 2000);
-  };
-  
-  ws.onerror = (error) => {
-    console.error('WebSocket error:', error);
-  };
-  
-  ws.onclose = () => {
-    console.log('WebSocket disconnected');
-    
-    // Show disconnection status
-    document.body.style.borderTop = '3px solid red';
-    
-    // Attempt to reconnect
-    if (reconnectAttempts < maxReconnectAttempts) {
-      reconnectAttempts++;
-      console.log(`Reconnecting... Attempt ${reconnectAttempts}/${maxReconnectAttempts}`);
-      setTimeout(connectWebSocket, reconnectDelay);
-    } else {
-      console.error('Max reconnection attempts reached');
-      alert('Connection lost. Please refresh the page.');
-    }
-  };
-  
-  ws.onmessage = handleWebSocketMessage;
-}
-
-function handleWebSocketMessage(e) {
-  try {
-    const data = JSON.parse(e.data);
-    
-    if (data.type === 'chatHistory') {
-      // Load chat history
-      controllerChatHistory.innerHTML = '';
-      data.messages.forEach(msg => {
-        addControllerChatMessage(msg.message, msg.sender, msg.timestamp);
-      });
-    } else if (data.type === 'newChatMessage') {
-      addControllerChatMessage(data.message, data.sender, data.timestamp);
-      
-      // Play sound for viewer messages
-      if (data.sender === 'viewer') {
-        playMessageReceivedSound();
-      }
-    } else if (data.type === 'viewerPresence') {
-      // Update viewer presence status
-      isViewerPresent = data.active;
-      updateChatOverlay();
-    }
-  } catch (error) {
-    console.error('Error handling message:', error);
-  }
-}
-
-// Start connection
-connectWebSocket();
-const sidebar = document.getElementById("sidebar");
-const pChar = document.getElementById("previewCharacter");
-const pBg = document.getElementById("previewBackground");
-const pCam = document.getElementById("previewCamera");
-const viewport = document.getElementById("previewViewport");
-const dialogueInput = document.getElementById("dialogueInput");
-const pDialogueBox = document.getElementById("previewDialogueBox");
-const pDialogueText = document.getElementById("previewDialogueText");
-const backgroundSection = document.getElementById("backgroundSection");
-const controllerChatHistory = document.getElementById("controllerChatHistory");
-
-pChar.ondragstart = () => false;
-
-// Presence tracking
-let isControllerActive = true;
-let isViewerPresent = false;
-let presenceInterval;
-
-// Sound effects
-const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
-function playMessageReceivedSound() {
-  // Notification sound for incoming viewer message
-  const oscillator1 = audioContext.createOscillator();
-  const oscillator2 = audioContext.createOscillator();
-  const gainNode = audioContext.createGain();
-  
-  oscillator1.connect(gainNode);
-  oscillator2.connect(gainNode);
-  gainNode.connect(audioContext.destination);
-  
-  oscillator1.frequency.value = 800;
-  oscillator2.frequency.value = 1000;
-  oscillator1.type = 'sine';
-  oscillator2.type = 'sine';
-  
-  gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-  
-  oscillator1.start(audioContext.currentTime);
-  oscillator2.start(audioContext.currentTime);
-  oscillator1.stop(audioContext.currentTime + 0.3);
-  oscillator2.stop(audioContext.currentTime + 0.3);
-}
-
-// Detect if controller is active on page
-function updateControllerPresence() {
-  const wasActive = isControllerActive;
-  isControllerActive = !document.hidden;
-  
-  if (wasActive !== isControllerActive) {
-    // Send presence update to server
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({
-        type: 'controllerPresence',
-        active: isControllerActive
-      }));
-    }
-  }
-}
-
-// Update chat phone overlay based on viewer presence
-function updateChatOverlay() {
-  const chatPanel = document.getElementById('controllerChatPanel');
-  if (!isViewerPresent) {
-    chatPanel.style.filter = 'brightness(0.3)';
-    chatPanel.style.pointerEvents = 'none';
-  } else {
-    chatPanel.style.filter = 'brightness(1)';
-    chatPanel.style.pointerEvents = 'auto';
-  }
-}
-
-// Listen for visibility changes
-document.addEventListener('visibilitychange', updateControllerPresence);
-
-// Send presence heartbeat every 5 seconds
-function startPresenceHeartbeat() {
-  presenceInterval = setInterval(() => {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({
-        type: 'controllerPresence',
-        active: !document.hidden
-      }));
-    }
-  }, 5000);
-}
-
-// Start heartbeat when loaded
-window.addEventListener('load', () => {
-  startPresenceHeartbeat();
-  updateControllerPresence();
-});
-
-let state = { 
-  emotion: null, 
-  file: null, 
-  x: 0, 
-  y: 0, 
-  zoom: 1, 
-  background: null, 
-  dialogue: null,
-  dialogueSettings: {
-    typeSpeed: 50,
-    fontFamily: 'Arial',
-    fontSize: 24,
-    boxWidth: 1100,
-    boxHeight: 140,
-    borderRadius: 8,
-    positionX: 50,
-    positionY: 40
-  }
-};
-
-function send() {
-  ws.send(JSON.stringify(state));
-}
-
-function setBg(path) {
-  state.background = path;
-  applyTransform();
-}
-
-function setDialogue() {
-  const message = dialogueInput.value;
-  
-  // Only send if there's actual text
-  if (!message.trim()) {
-    state.dialogue = null;
-    applyTransform();
-    return;
-  }
-  
-  state.dialogue = message;
-  applyTransform();
-  
-  // Clear the input after sending
-  dialogueInput.value = '';
-}
-
-function clearDialogue() {
-  state.dialogue = null;
-  dialogueInput.value = '';
-  applyTransform();
-}
-
-function applyDialogueSettings() {
-  state.dialogueSettings = {
-    typeSpeed: parseInt(document.getElementById('typeSpeed').value),
-    fontFamily: document.getElementById('fontFamily').value,
-    fontSize: parseInt(document.getElementById('fontSize').value),
-    boxWidth: parseInt(document.getElementById('boxWidth').value),
-    boxHeight: parseInt(document.getElementById('boxHeight').value),
-    borderRadius: parseInt(document.getElementById('borderRadius').value),
-    positionX: parseInt(document.getElementById('positionX').value),
-    positionY: parseInt(document.getElementById('positionY').value)
-  };
-  applyDialogueBoxStyle();
-  send();
-}
-
-function toggleSettings(panelId) {
-  const panel = document.getElementById(panelId);
-  panel.classList.toggle('open');
-}
-
-// Add enter key listener to dialogue input
-dialogueInput.addEventListener('keypress', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    setDialogue();
-  }
-});
-
-function addControllerChatMessage(message, sender, timestamp) {
-  const messageDiv = document.createElement('div');
-  messageDiv.className = `controller-chat-message ${sender}`;
-  
-  const textSpan = document.createElement('span');
-  textSpan.textContent = message;
-  messageDiv.appendChild(textSpan);
-  
-  if (timestamp) {
-    const timeSpan = document.createElement('span');
-    timeSpan.className = 'timestamp';
-    const date = new Date(timestamp);
-    timeSpan.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    messageDiv.appendChild(timeSpan);
-  }
-  
-  controllerChatHistory.appendChild(messageDiv);
-  
-  // Limit chat history to 100 messages
-  const maxMessages = 100;
-  while (controllerChatHistory.children.length > maxMessages) {
-    controllerChatHistory.removeChild(controllerChatHistory.firstChild);
-  }
-  
-  // Auto-scroll to bottom
-  controllerChatHistory.scrollTop = controllerChatHistory.scrollHeight;
-}
-
-// WebSocket message handler
-ws.onmessage = (e) => {
-  const data = JSON.parse(e.data);
-  
-  if (data.type === 'chatHistory') {
-    // Load chat history
-    controllerChatHistory.innerHTML = '';
-    data.messages.forEach(msg => {
-      addControllerChatMessage(msg.message, msg.sender, msg.timestamp);
-    });
-  } else if (data.type === 'newChatMessage') {
-    addControllerChatMessage(data.message, data.sender, data.timestamp);
-  }
-};
-
-// Load backgrounds dynamically
-fetch("/backgrounds")
-.then(r => r.json())
-.then(files => {
-  // Add clear button first
-  const clearBtn = document.createElement("button");
-  clearBtn.textContent = "Clear";
-  clearBtn.className = "clear";
-  clearBtn.onclick = () => setBg(null);
-  backgroundSection.appendChild(clearBtn);
-  
-  // Add button for each background
-  files.forEach(file => {
-    const btn = document.createElement("button");
-    // Remove extension for display name
-    const name = file.replace(/\.[^/.]+$/, "");
-    btn.textContent = name;
-    btn.onclick = () => setBg(`bg/${file}`);
-    backgroundSection.appendChild(btn);
-  });
-});
-
-// Load sprites dynamically
-fetch("/sprites")
-.then(r => r.json())
-.then(data => {
-  Object.entries(data).forEach(([name, structure]) => {
-    if (structure.type === 'simple') {
-      // Old structure: emotion -> files
-      const box = document.createElement("div");
-      box.className = "emotion";
-      
-      const header = document.createElement("h3");
-      header.textContent = name;
-      
-      const content = document.createElement("div");
-      content.className = "emotion-content";
-      
-      structure.files.forEach(file => {
-        const img = document.createElement("img");
-        img.src = `sprites/${name}/${file}`;
-        img.className = "thumb";
-        img.onclick = () => {
-          // Remove active class from all thumbnails
-          document.querySelectorAll('.thumb').forEach(t => {
-            t.classList.remove('active');
-          });
-          
-          // Add active class to clicked thumbnail
-          img.classList.add('active');
-          
-          // Check if there's NEW text in the input box
-          const hasNewText = dialogueInput.value.trim();
-          
-          // Update emotion
-          state.emotion = name;
-          state.file = file;
-          pChar.src = img.src;
-          
-          if (hasNewText) {
-            // There's new text - send it with the emotion
-            state.dialogue = dialogueInput.value;
-            dialogueInput.value = ''; // Clear the input box
-            applyTransform(); // This sends everything including dialogue
-          } else {
-            // No new text - just update the emotion without resending dialogue
-            updateCharacterOnly();
-          }
-        };
-        content.appendChild(img);
-      });
-      
-      // Click header to toggle accordion
-      header.onclick = () => {
-        const wasOpen = content.classList.contains('open');
-        
-        // Close all other emotion sections
-        document.querySelectorAll('.emotion-content').forEach(c => {
-          c.classList.remove('open');
-        });
-        document.querySelectorAll('.emotion h3, .category h3').forEach(h => {
-          h.classList.remove('active');
-        });
-        
-        // Toggle current section
-        if (!wasOpen) {
-          content.classList.add('open');
-          header.classList.add('active');
-        }
-      };
-      
-      box.appendChild(header);
-      box.appendChild(content);
-      sidebar.appendChild(box);
-      
-    } else if (structure.type === 'nested') {
-      // New structure: character/category -> emotion -> files
-      const categoryBox = document.createElement("div");
-      categoryBox.className = "category";
-      
-      const categoryHeader = document.createElement("h3");
-      categoryHeader.textContent = name;
-      categoryHeader.style.background = '#1a5a3a'; // Different color for categories
-      
-      const categoryContent = document.createElement("div");
-      categoryContent.className = "category-content";
-      
-      // Add each emotion under this category
-      Object.entries(structure.emotions).forEach(([emotion, files]) => {
-        const emotionBox = document.createElement("div");
-        emotionBox.className = "sub-emotion";
-        
-        const emotionHeader = document.createElement("h4");
-        emotionHeader.textContent = emotion;
-        emotionHeader.style.marginLeft = '10px';
-        emotionHeader.style.fontSize = '13px';
-        emotionHeader.style.padding = '8px';
-        emotionHeader.style.background = '#2a2a2a';
-        emotionHeader.style.cursor = 'pointer';
-        emotionHeader.style.borderRadius = '4px';
-        
-        const emotionContent = document.createElement("div");
-        emotionContent.className = "emotion-content";
-        emotionContent.style.marginLeft = '10px';
-        
-        files.forEach(file => {
-          const img = document.createElement("img");
-          img.src = `sprites/${name}/${emotion}/${file}`;
-          img.className = "thumb";
-          img.onclick = () => {
-            // Remove active class from all thumbnails
-            document.querySelectorAll('.thumb').forEach(t => {
-              t.classList.remove('active');
-            });
-            
-            // Add active class to clicked thumbnail
-            img.classList.add('active');
-            
-            // Check if there's NEW text in the input box
-            const hasNewText = dialogueInput.value.trim();
-            
-            // Update emotion (store path)
-            state.emotion = `${name}/${emotion}`;
-            state.file = file;
-            pChar.src = img.src;
-            
-            if (hasNewText) {
-              // There's new text - send it with the emotion
-              state.dialogue = dialogueInput.value;
-              dialogueInput.value = ''; // Clear the input box
-              applyTransform(); // This sends everything including dialogue
-            } else {
-              // No new text - just update the emotion without resending dialogue
-              updateCharacterOnly();
-            }
-          };
-          emotionContent.appendChild(img);
-        });
-        
-        // Click emotion header to toggle
-        emotionHeader.onclick = () => {
-          const wasOpen = emotionContent.classList.contains('open');
-          
-          // Close all other sections at this level
-          categoryContent.querySelectorAll('.emotion-content').forEach(c => {
-            c.classList.remove('open');
-          });
-          categoryContent.querySelectorAll('h4').forEach(h => {
-            h.classList.remove('active');
-          });
-          
-          // Toggle current section
-          if (!wasOpen) {
-            emotionContent.classList.add('open');
-            emotionHeader.classList.add('active');
-          }
-        };
-        
-        emotionBox.appendChild(emotionHeader);
-        emotionBox.appendChild(emotionContent);
-        categoryContent.appendChild(emotionBox);
-      });
-      
-      // Click category header to toggle
-      categoryHeader.onclick = () => {
-        const wasOpen = categoryContent.classList.contains('open');
-        
-        // Close all other category sections
-        document.querySelectorAll('.category-content').forEach(c => {
-          c.classList.remove('open');
-        });
-        document.querySelectorAll('.category h3').forEach(h => {
-          h.classList.remove('active');
-        });
-        document.querySelectorAll('.emotion h3').forEach(h => {
-          h.classList.remove('active');
-        });
-        document.querySelectorAll('.emotion-content').forEach(c => {
-          c.classList.remove('open');
-        });
-        
-        // Toggle current section
-        if (!wasOpen) {
-          categoryContent.classList.add('open');
-          categoryHeader.classList.add('active');
-        }
-      };
-      
-      categoryBox.appendChild(categoryHeader);
-      categoryBox.appendChild(categoryContent);
-      sidebar.appendChild(categoryBox);
-    }
-  });
-});
-
-// Scale preview to match viewer
-function scalePreview() {
-  const s = Math.min(
-    viewport.clientWidth / 1280,
-    viewport.clientHeight / 720
-  );
-  pCam.style.transform = `translate(-50%, -50%) scale(${s})`;
-}
-window.addEventListener("resize", scalePreview);
-scalePreview();
-
-// Apply character transform and background
-function applyTransform() {
-  // Character
-  pChar.style.transform =
-    `translate(${state.x}px, ${state.y}px) scale(${state.zoom}) translate(-50%, -50%)`;
-
-  // Background
-  if (state.background) {
-    pBg.style.backgroundImage = `url(${state.background})`;
-  } else {
-    pBg.style.backgroundImage = "";
-  }
-  
-  // Dialogue preview
-  if (state.dialogue && state.dialogue.trim()) {
-    pDialogueBox.classList.add('visible');
-    pDialogueText.textContent = state.dialogue;
-  } else {
-    pDialogueBox.classList.remove('visible');
-  }
-
-  send();
-}
-
-function updateCharacterOnly() {
-  // Character
-  pChar.style.transform =
-    `translate(${state.x}px, ${state.y}px) scale(${state.zoom}) translate(-50%, -50%)`;
-  
-  // Send only character/position state, not dialogue
-  ws.send(JSON.stringify({
-    emotion: state.emotion,
-    file: state.file,
-    x: state.x,
-    y: state.y,
-    zoom: state.zoom,
-    background: state.background,
-    dialogueSettings: state.dialogueSettings
-    // Note: NOT sending dialogue
-  }));
-}
-
-function applyDialogueBoxStyle() {
-  const s = state.dialogueSettings;
-  pDialogueBox.style.width = s.boxWidth + 'px';
-  pDialogueBox.style.minHeight = s.boxHeight + 'px';
-  pDialogueBox.style.borderRadius = s.borderRadius + 'px';
-  pDialogueBox.style.bottom = s.positionY + 'px';
-  pDialogueBox.style.left = s.positionX + '%';
-  
-  pDialogueText.style.fontFamily = s.fontFamily;
-  pDialogueText.style.fontSize = s.fontSize + 'px';
-}
-
-// Initialize dialogue box style
-applyDialogueBoxStyle();
-
-// Dragging logic
-let dragging = false, lx=0, ly=0;
-
-viewport.onmousedown = e => {
-  dragging = true;
-  lx = e.clientX;
-  ly = e.clientY;
-};
-
-window.onmouseup = () => dragging = false;
-
-window.onmousemove = e => {
-  if (!dragging) return;
-  state.x += e.clientX - lx;
-  state.y += e.clientY - ly;
-  lx = e.clientX;
-  ly = e.clientY;
-  updateCharacterOnly(); // Use updateCharacterOnly to avoid resending dialogue
-};
-
-// Scroll wheel zoom
-viewport.onwheel = e => {
-  e.preventDefault();
-  state.zoom += -e.deltaY * 0.001;
-  updateCharacterOnly(); // Use updateCharacterOnly to avoid resending dialogue
-};
-</script>
-
-</body>
-</html>
+const wsProtocol=window.location.protocol==='https:'?'wss:':'ws:';const wsHost=window.location.host||'localhost:8080';let ws,reconnectAttempts=0;const maxReconnectAttempts=10,reconnectDelay=3000;const sidebar=document.getElementById('sidebar'),pChar=document.getElementById('previewCharacter'),pBg=document.getElementById('previewBackground'),pCam=document.getElementById('previewCamera'),viewport=document.getElementById('previewViewport'),dialogueInput=document.getElementById('dialogueInput'),characterNameInput=document.getElementById('characterNameInput'),pDialogueBox=document.getElementById('previewDialogueBox'),pDialogueText=document.getElementById('previewDialogueText'),pCharacterName=document.getElementById('previewCharacterName'),pCharacterNameBox=document.getElementById('previewCharacterNameBox'),backgroundSection=document.getElementById('backgroundSection'),controllerChatHistory=document.getElementById('controllerChatHistory'),spritesContainer=document.getElementById('spritesContainer'),musicSelect=document.getElementById('musicSelect'),volumeSlider=document.getElementById('volumeSlider'),volumeDisplay=document.getElementById('volumeDisplay'),soundSelect=document.getElementById('soundSelect');pChar.ondragstart=()=>false;let isControllerActive=true,isViewerPresent=false,presenceInterval;const audioContext=new(window.AudioContext||window.webkitAudioContext)();function playMessageReceivedSound(){try{const o1=audioContext.createOscillator(),o2=audioContext.createOscillator(),g=audioContext.createGain();o1.connect(g);o2.connect(g);g.connect(audioContext.destination);o1.frequency.value=800;o2.frequency.value=1000;o1.type='sine';o2.type='sine';g.gain.setValueAtTime(.2,audioContext.currentTime);g.gain.exponentialRampToValueAtTime(.01,audioContext.currentTime+.3);o1.start(audioContext.currentTime);o2.start(audioContext.currentTime);o1.stop(audioContext.currentTime+.3);o2.stop(audioContext.currentTime+.3);}catch(e){}}function updateControllerPresence(){const wasActive=isControllerActive;isControllerActive=!document.hidden;if(wasActive!==isControllerActive&&ws&&ws.readyState===WebSocket.OPEN){ws.send(JSON.stringify({type:'controllerPresence',active:isControllerActive}));}}function updateChatOverlay(){const chatPanel=document.getElementById('controllerChatPanel');if(!isViewerPresent){chatPanel.style.filter='brightness(0.3)';chatPanel.style.pointerEvents='none';chatPanel.style.opacity='0.5';}else{chatPanel.style.filter='brightness(1)';chatPanel.style.pointerEvents='auto';chatPanel.style.opacity='1';}}document.addEventListener('visibilitychange',updateControllerPresence);function startPresenceHeartbeat(){presenceInterval=setInterval(()=>{if(ws&&ws.readyState===WebSocket.OPEN){ws.send(JSON.stringify({type:'controllerPresence',active:!document.hidden}));}},5000);}window.addEventListener('load',()=>{startPresenceHeartbeat();updateControllerPresence();});function toggleSettings(panelId){document.getElementById(panelId).classList.toggle('open');}function setBg(path){ws.send(JSON.stringify({type:'updateEnvironment',data:{background:path}}));if(path){pBg.style.backgroundImage='url('+path+')';}else{pBg.style.backgroundImage='';}}function updateMusic(){const music=musicSelect.value;const volume=volumeSlider.value/100;ws.send(JSON.stringify({type:'updateEnvironment',data:{music:music||null,musicVolume:volume}}));}function updateVolume(){const volume=volumeSlider.value;volumeDisplay.textContent=volume+'%';ws.send(JSON.stringify({type:'updateEnvironment',data:{musicVolume:volume/100}}));}function updateSound(){const sound=soundSelect.value;ws.send(JSON.stringify({type:'updateDialogue',data:{typeSound:sound||null}}));}function setDialogue(){const text=dialogueInput.value;const name=characterNameInput.value;if(!text.trim())return;ws.send(JSON.stringify({type:'updateDialogue',data:{text:text,characterName:name}}));pDialogueText.textContent=text;pCharacterName.textContent=name;if(name){pCharacterNameBox.style.display='block';}else{pCharacterNameBox.style.display='none';}pDialogueBox.classList.add('visible');}function clearDialogue(){dialogueInput.value='';ws.send(JSON.stringify({type:'updateDialogue',data:{text:null}}));pDialogueBox.classList.remove('visible');}function applyDialogueSettings(){const settings={typeSpeed:parseInt(document.getElementById('typeSpeed').value),fontFamily:document.getElementById('fontFamily').value,fontSize:parseInt(document.getElementById('fontSize').value),boxWidth:parseInt(document.getElementById('boxWidth').value),boxHeight:parseInt(document.getElementById('boxHeight').value),borderRadius:parseInt(document.getElementById('borderRadius').value),positionX:parseInt(document.getElementById('positionX').value),positionY:parseInt(document.getElementById('positionY').value)};applyDialogueBoxStyle(settings);ws.send(JSON.stringify({type:'updateDialogueSettings',data:settings}));}function applyDialogueBoxStyle(s){pDialogueBox.style.width=s.boxWidth+'px';pDialogueBox.style.minHeight=s.boxHeight+'px';pDialogueBox.style.borderRadius=s.borderRadius+'px';pDialogueBox.style.bottom=s.positionY+'px';pDialogueBox.style.left=s.positionX+'%';pDialogueText.style.fontFamily=s.fontFamily;pDialogueText.style.fontSize=s.fontSize+'px';}applyDialogueBoxStyle({typeSpeed:50,fontFamily:'Arial',fontSize:24,boxWidth:800,boxHeight:160,borderRadius:8,positionX:35,positionY:40});function addControllerChatMessage(message,sender,timestamp){const messageDiv=document.createElement('div');messageDiv.className='controller-chat-message '+sender;const textSpan=document.createElement('span');textSpan.textContent=message;messageDiv.appendChild(textSpan);if(timestamp){const timeSpan=document.createElement('span');timeSpan.className='timestamp';const date=new Date(timestamp);timeSpan.textContent=date.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});messageDiv.appendChild(timeSpan);}controllerChatHistory.appendChild(messageDiv);const maxMessages=100;while(controllerChatHistory.children.length>maxMessages){controllerChatHistory.removeChild(controllerChatHistory.firstChild);}requestAnimationFrame(()=>{controllerChatHistory.scrollTop=controllerChatHistory.scrollHeight;});}function connectWebSocket(){ws=new WebSocket(wsProtocol+'//'+wsHost);ws.onopen=()=>{console.log('WebSocket connected');reconnectAttempts=0;document.body.style.borderTop='3px solid green';setTimeout(()=>{document.body.style.borderTop='';},2000);};ws.onerror=(error)=>{console.error('WebSocket error:',error);};ws.onclose=()=>{console.log('WebSocket disconnected');document.body.style.borderTop='3px solid red';if(reconnectAttempts<maxReconnectAttempts){reconnectAttempts++;console.log('Reconnecting... Attempt '+reconnectAttempts+'/'+maxReconnectAttempts);setTimeout(connectWebSocket,reconnectDelay);}else{alert('Connection lost. Please refresh the page.');}};ws.onmessage=handleWebSocketMessage;}function handleWebSocketMessage(e){try{const data=JSON.parse(e.data);if(data.type==='chatHistory'){controllerChatHistory.innerHTML='';data.messages.forEach(msg=>{addControllerChatMessage(msg.message,msg.sender,msg.timestamp);});}else if(data.type==='newChatMessage'){addControllerChatMessage(data.message,data.sender,data.timestamp);if(data.sender==='viewer'){playMessageReceivedSound();}}else if(data.type==='presenceState'){isViewerPresent=data.data.viewerActive;updateChatOverlay();}}catch(error){console.error('Error handling message:',error);}}connectWebSocket();fetch('/backgrounds').then(r=>r.json()).then(files=>{const clearBtn=document.createElement('button');clearBtn.textContent='Clear';clearBtn.className='clear';clearBtn.onclick=()=>setBg(null);backgroundSection.appendChild(clearBtn);files.forEach(file=>{const btn=document.createElement('button');const name=file.replace(/\.[^/.]+$/,'');btn.textContent=name;btn.onclick=()=>setBg('bg/'+file);backgroundSection.appendChild(btn);});});fetch('/music').then(r=>r.json()).then(files=>{files.forEach(file=>{const opt=document.createElement('option');opt.value=file;opt.textContent=file.replace(/\.[^/.]+$/,'');musicSelect.appendChild(opt);});});fetch('/sounds').then(r=>r.json()).then(files=>{files.forEach(file=>{const opt=document.createElement('option');opt.value=file;opt.textContent=file.replace(/\.[^/.]+$/,'');soundSelect.appendChild(opt);});});fetch('/sprites').then(r=>r.json()).then(data=>{Object.entries(data).forEach(([name,structure])=>{if(structure.type==='simple'){const box=document.createElement('div');box.className='emotion';const header=document.createElement('h3');header.textContent=name;const content=document.createElement('div');content.className='emotion-content';structure.files.forEach(file=>{const img=document.createElement('img');img.src='sprites/'+name+'/'+file;img.className='thumb';img.onclick=()=>{document.querySelectorAll('.thumb').forEach(t=>t.classList.remove('active'));img.classList.add('active');ws.send(JSON.stringify({type:'updateVisual',data:{emotion:name,file:file}}));pChar.src=img.src;};content.appendChild(img);});header.onclick=()=>{const wasOpen=content.classList.contains('open');document.querySelectorAll('.emotion-content').forEach(c=>c.classList.remove('open'));document.querySelectorAll('.emotion h3,.category h3').forEach(h=>h.classList.remove('active'));if(!wasOpen){content.classList.add('open');header.classList.add('active');}};box.appendChild(header);box.appendChild(content);spritesContainer.appendChild(box);}else if(structure.type==='nested'){const categoryBox=document.createElement('div');categoryBox.className='category';const categoryHeader=document.createElement('h3');categoryHeader.textContent=name;const categoryContent=document.createElement('div');categoryContent.className='category-content';Object.entries(structure.emotions).forEach(([emotion,files])=>{const emotionBox=document.createElement('div');emotionBox.className='sub-emotion';const emotionHeader=document.createElement('h4');emotionHeader.textContent=emotion;const emotionContent=document.createElement('div');emotionContent.className='emotion-content';files.forEach(file=>{const img=document.createElement('img');img.src='sprites/'+name+'/'+emotion+'/'+file;img.className='thumb';img.onclick=()=>{document.querySelectorAll('.thumb').forEach(t=>t.classList.remove('active'));img.classList.add('active');ws.send(JSON.stringify({type:'updateVisual',data:{emotion:name+'/'+emotion,file:file}}));pChar.src=img.src;};emotionContent.appendChild(img);});emotionHeader.onclick=()=>{const wasOpen=emotionContent.classList.contains('open');categoryContent.querySelectorAll('.emotion-content').forEach(c=>c.classList.remove('open'));categoryContent.querySelectorAll('h4').forEach(h=>h.classList.remove('active'));if(!wasOpen){emotionContent.classList.add('open');emotionHeader.classList.add('active');}};emotionBox.appendChild(emotionHeader);emotionBox.appendChild(emotionContent);categoryContent.appendChild(emotionBox);});categoryHeader.onclick=()=>{const wasOpen=categoryContent.classList.contains('open');document.querySelectorAll('.category-content').forEach(c=>c.classList.remove('open'));document.querySelectorAll('.category h3').forEach(h=>h.classList.remove('active'));document.querySelectorAll('.emotion h3').forEach(h=>h.classList.remove('active'));document.querySelectorAll('.emotion-content').forEach(c=>c.classList.remove('open'));if(!wasOpen){categoryContent.classList.add('open');categoryHeader.classList.add('active');}};categoryBox.appendChild(categoryHeader);categoryBox.appendChild(categoryContent);spritesContainer.appendChild(categoryBox);}});});function scalePreview(){const s=Math.min(viewport.clientWidth/1280,viewport.clientHeight/720);pCam.style.transform='translate(-50%,-50%) scale('+s+')';}window.addEventListener('resize',scalePreview);scalePreview();let dragging=false,lx=0,ly=0;viewport.onmousedown=e=>{dragging=true;lx=e.clientX;ly=e.clientY;};window.onmouseup=()=>dragging=false;window.onmousemove=e=>{if(!dragging)return;const dx=e.clientX-lx;const dy=e.clientY-ly;lx=e.clientX;ly=e.clientY;pChar.style.transform='translate('+(pChar.offsetLeft+dx)+'px,'+(pChar.offsetTop+dy)+'px)';ws.send(JSON.stringify({type:'updateVisual',data:{x:pChar.offsetLeft+dx,y:pChar.offsetTop+dy}}));};viewport.onwheel=e=>{e.preventDefault();const currentTransform=pChar.style.transform||'';const scaleMatch=currentTransform.match(/scale\(([^)]+)\)/);let currentScale=scaleMatch?parseFloat(scaleMatch[1]):1;currentScale+=-e.deltaY*.001;pChar.style.transform=currentTransform.replace(/scale\([^)]+\)/,'')+' scale('+currentScale+')';ws.send(JSON.stringify({type:'updateVisual',data:{zoom:currentScale}}));};dialogueInput.addEventListener('keypress',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();setDialogue();}});
+</script></body></html>

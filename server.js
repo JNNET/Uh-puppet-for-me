@@ -8,288 +8,135 @@ const PORT = process.env.PORT || 8080;
 
 app.use(express.static("public"));
 
-// Auto-load sprites with nested structure support
+// Auto-load sprites
 app.get("/sprites", (req, res) => {
   const base = path.join(__dirname, "public", "sprites");
   const out = {};
-  
   try {
+    if (!fs.existsSync(base)) return res.json({});
     const items = fs.readdirSync(base);
-    
     items.forEach(item => {
       const itemPath = path.join(base, item);
-      
       if (fs.statSync(itemPath).isDirectory()) {
-        // Check if this directory contains image files directly
         const contents = fs.readdirSync(itemPath);
-        const hasImages = contents.some(file => {
-          const ext = path.extname(file).toLowerCase();
-          return ['.png', '.jpg', '.jpeg', '.gif', '.webp'].includes(ext);
-        });
-        
+        const hasImages = contents.some(file => ['.png','.jpg','.jpeg','.gif','.webp'].includes(path.extname(file).toLowerCase()));
         if (hasImages) {
-          // This is a simple emotion folder (old structure)
-          out[item] = {
-            type: 'simple',
-            files: contents.filter(file => {
-              const ext = path.extname(file).toLowerCase();
-              return ['.png', '.jpg', '.jpeg', '.gif', '.webp'].includes(ext);
-            })
-          };
+          out[item] = { type:'simple', files:contents.filter(f=>['.png','.jpg','.jpeg','.gif','.webp'].includes(path.extname(f).toLowerCase())) };
         } else {
-          // This is a character/category folder with nested emotions
           const emotions = {};
           contents.forEach(subItem => {
             const subPath = path.join(itemPath, subItem);
             if (fs.statSync(subPath).isDirectory()) {
-              const files = fs.readdirSync(subPath).filter(file => {
-                const ext = path.extname(file).toLowerCase();
-                return ['.png', '.jpg', '.jpeg', '.gif', '.webp'].includes(ext);
-              });
-              if (files.length > 0) {
-                emotions[subItem] = files;
-              }
+              const files = fs.readdirSync(subPath).filter(f=>['.png','.jpg','.jpeg','.gif','.webp'].includes(path.extname(f).toLowerCase()));
+              if (files.length > 0) emotions[subItem] = files;
             }
           });
-          
-          if (Object.keys(emotions).length > 0) {
-            out[item] = {
-              type: 'nested',
-              emotions: emotions
-            };
-          }
+          if (Object.keys(emotions).length > 0) out[item] = { type:'nested', emotions };
         }
       }
     });
-    
     res.json(out);
-  } catch (err) {
-    console.error('Error loading sprites:', err);
-    res.json({});
-  }
+  } catch(e) { res.json({}); }
 });
 
-// Auto-load backgrounds
 app.get("/backgrounds", (req, res) => {
-  const bgPath = path.join(__dirname, "public", "bg");
+  const p = path.join(__dirname, "public", "bg");
   try {
-    const files = fs.readdirSync(bgPath).filter(file => {
-      const ext = path.extname(file).toLowerCase();
-      return ['.png', '.jpg', '.jpeg', '.gif', '.webp'].includes(ext);
-    });
-    res.json(files);
-  } catch (err) {
-    res.json([]);
-  }
+    if (!fs.existsSync(p)) return res.json([]);
+    res.json(fs.readdirSync(p).filter(f=>['.png','.jpg','.jpeg','.gif','.webp'].includes(path.extname(f).toLowerCase())));
+  } catch(e) { res.json([]); }
 });
 
-const server = app.listen(PORT, () =>
-  console.log(`Server running on port ${PORT}`)
-);
+app.get("/music", (req, res) => {
+  const p = path.join(__dirname, "public", "music");
+  try {
+    if (!fs.existsSync(p)) return res.json([]);
+    res.json(fs.readdirSync(p).filter(f=>['.mp3','.ogg','.wav','.m4a'].includes(path.extname(f).toLowerCase())));
+  } catch(e) { res.json([]); }
+});
 
+app.get("/sounds", (req, res) => {
+  const p = path.join(__dirname, "public", "sounds");
+  try {
+    if (!fs.existsSync(p)) return res.json([]);
+    res.json(fs.readdirSync(p).filter(f=>['.mp3','.ogg','.wav'].includes(path.extname(f).toLowerCase())));
+  } catch(e) { res.json([]); }
+});
+
+const server = app.listen(PORT, () => console.log(`Server on port ${PORT}`));
 const wss = new WebSocket.Server({ server });
 
-// GLOBAL STATE (everything lives here)
-let state = {
-  emotion: null,
-  file: null,
-  x: 0,
-  y: 0,
-  zoom: 1,
-  background: null,
-  dialogue: null,
-  dialogueSettings: {
-    typeSpeed: 50,
-    fontFamily: 'Arial',
-    fontSize: 24,
-    boxWidth: 1100,
-    boxHeight: 140,
-    borderRadius: 8,
-    positionX: 50,
-    positionY: 40
-  }
+const state = {
+  visual: { emotion:null, file:null, x:0, y:0, zoom:1 },
+  environment: { background:null, music:null, musicVolume:0.5 },
+  dialogue: { text:null, characterName:'', typeSound:null, settings:{ typeSpeed:50, fontFamily:'Arial', fontSize:24, boxWidth:800, boxHeight:160, borderRadius:8, positionX:35, positionY:40 }},
+  presence: { controllerActive:false, viewerActive:false }
 };
 
-// Chat history with message limit
-let chatMessages = [];
-const MAX_MESSAGES = 100; // Only keep the last 100 messages
-
-function addChatMessage(message) {
-  chatMessages.push(message);
-  
-  // Remove oldest messages if we exceed the limit
-  if (chatMessages.length > MAX_MESSAGES) {
-    chatMessages = chatMessages.slice(-MAX_MESSAGES); // Keep only the last MAX_MESSAGES
-  }
-}
-
-// Connection monitoring
-let connectionCount = 0;
-let viewerPresence = false;
-let controllerPresence = false;
+const chatMessages = [];
+const MAX_MESSAGES = 100;
 
 wss.on("connection", ws => {
-  connectionCount++;
-  console.log(`New connection. Total connections: ${connectionCount}`);
-  
-  // Send current state
+  console.log('New connection');
   try {
-    ws.send(JSON.stringify(state));
-    
-    // Send chat history
-    ws.send(JSON.stringify({
-      type: 'chatHistory',
-      messages: chatMessages
-    }));
-    
-    // Send current presence status
-    ws.send(JSON.stringify({
-      type: 'viewerPresence',
-      active: viewerPresence
-    }));
-    
-    ws.send(JSON.stringify({
-      type: 'controllerPresence',
-      active: controllerPresence
-    }));
-  } catch (error) {
-    console.error('Error sending initial data:', error);
-  }
-
+    ws.send(JSON.stringify({type:'visualState',data:state.visual}));
+    ws.send(JSON.stringify({type:'environmentState',data:state.environment}));
+    ws.send(JSON.stringify({type:'dialogueState',data:state.dialogue}));
+    ws.send(JSON.stringify({type:'presenceState',data:state.presence}));
+    ws.send(JSON.stringify({type:'chatHistory',messages:chatMessages}));
+  } catch(e) {}
+  
   ws.on("message", msg => {
     try {
-      const data = JSON.parse(msg);
-      
-      // Handle different message types
-      if (data.type === 'viewerMessage') {
-        // Viewer sent a message
-        const chatMessage = {
-          sender: 'viewer',
-          message: data.message,
-          timestamp: data.timestamp
-        };
-        addChatMessage(chatMessage);
-        console.log('Viewer message:', data.message);
-        
-        // Broadcast to all clients
-        wss.clients.forEach(c => {
-          if (c.readyState === WebSocket.OPEN) {
-            try {
-              c.send(JSON.stringify({
-                type: 'newChatMessage',
-                ...chatMessage
-              }));
-            } catch (error) {
-              console.error('Error broadcasting viewer message:', error);
-            }
-          }
-        });
-      } else if (data.type === 'controllerMessage') {
-        // Controller sent a message (dialogue)
-        const chatMessage = {
-          sender: 'controller',
-          message: data.message,
-          timestamp: data.timestamp
-        };
-        addChatMessage(chatMessage);
-        console.log('Controller message:', data.message);
-        
-        // Broadcast to all clients
-        wss.clients.forEach(c => {
-          if (c.readyState === WebSocket.OPEN) {
-            try {
-              c.send(JSON.stringify({
-                type: 'newChatMessage',
-                ...chatMessage
-              }));
-            } catch (error) {
-              console.error('Error broadcasting controller message:', error);
-            }
-          }
-        });
-      } else if (data.type === 'viewerPresence') {
-        // Viewer presence update
-        viewerPresence = data.active;
-        console.log('Viewer presence:', viewerPresence);
-        
-        // Broadcast to all clients
-        wss.clients.forEach(c => {
-          if (c.readyState === WebSocket.OPEN) {
-            try {
-              c.send(JSON.stringify({
-                type: 'viewerPresence',
-                active: viewerPresence
-              }));
-            } catch (error) {
-              console.error('Error broadcasting viewer presence:', error);
-            }
-          }
-        });
-      } else if (data.type === 'controllerPresence') {
-        // Controller presence update
-        controllerPresence = data.active;
-        console.log('Controller presence:', controllerPresence);
-        
-        // Broadcast to all clients
-        wss.clients.forEach(c => {
-          if (c.readyState === WebSocket.OPEN) {
-            try {
-              c.send(JSON.stringify({
-                type: 'controllerPresence',
-                active: controllerPresence
-              }));
-            } catch (error) {
-              console.error('Error broadcasting controller presence:', error);
-            }
-          }
-        });
-      } else {
-        // Regular state update
-        state = data;
-        wss.clients.forEach(c => {
-          if (c.readyState === WebSocket.OPEN) {
-            try {
-              c.send(JSON.stringify(state));
-            } catch (error) {
-              console.error('Error broadcasting state:', error);
-            }
-          }
-        });
+      const d = JSON.parse(msg);
+      if(d.type==='updateVisual') {
+        Object.assign(state.visual,d.data);
+        broadcast({type:'visualState',data:state.visual});
+      } else if(d.type==='updateEnvironment') {
+        Object.assign(state.environment,d.data);
+        broadcast({type:'environmentState',data:state.environment});
+      } else if(d.type==='updateDialogue') {
+        if(d.data.text!==undefined) state.dialogue.text=d.data.text;
+        if(d.data.characterName!==undefined) state.dialogue.characterName=d.data.characterName;
+        if(d.data.typeSound!==undefined) state.dialogue.typeSound=d.data.typeSound;
+        broadcast({type:'dialogueState',data:state.dialogue});
+      } else if(d.type==='updateDialogueSettings') {
+        Object.assign(state.dialogue.settings,d.data);
+        broadcast({type:'dialogueState',data:state.dialogue});
+      } else if(d.type==='viewerMessage') {
+        const m={sender:'viewer',message:d.message,timestamp:d.timestamp};
+        chatMessages.push(m);
+        if(chatMessages.length>MAX_MESSAGES) chatMessages.shift();
+        broadcast({type:'newChatMessage',...m});
+      } else if(d.type==='controllerMessage') {
+        const m={sender:'controller',message:d.message,timestamp:d.timestamp};
+        chatMessages.push(m);
+        if(chatMessages.length>MAX_MESSAGES) chatMessages.shift();
+        broadcast({type:'newChatMessage',...m});
+      } else if(d.type==='viewerPresence') {
+        state.presence.viewerActive=d.active;
+        broadcast({type:'presenceState',data:state.presence});
+      } else if(d.type==='controllerPresence') {
+        state.presence.controllerActive=d.active;
+        broadcast({type:'presenceState',data:state.presence});
       }
-    } catch (error) {
-      console.error('Error processing message:', error);
-    }
+    } catch(e) {}
   });
   
-  ws.on('error', (error) => {
-    console.error('WebSocket error:', error);
-  });
-  
-  ws.on('close', () => {
-    connectionCount--;
-    console.log(`Connection closed. Total connections: ${connectionCount}`);
-  });
-  
-  // Heartbeat to keep connection alive
-  ws.isAlive = true;
-  ws.on('pong', () => {
-    ws.isAlive = true;
-  });
+  ws.isAlive=true;
+  ws.on('pong',()=>{ws.isAlive=true;});
+  ws.on('close',()=>console.log('Connection closed'));
 });
 
-// Ping clients every 30 seconds to keep connections alive
-const heartbeatInterval = setInterval(() => {
-  wss.clients.forEach(ws => {
-    if (ws.isAlive === false) {
-      console.log('Terminating dead connection');
-      return ws.terminate();
-    }
-    
-    ws.isAlive = false;
+function broadcast(msg) {
+  const s=JSON.stringify(msg);
+  wss.clients.forEach(c=>{if(c.readyState===WebSocket.OPEN) try{c.send(s);}catch(e){}});
+}
+
+setInterval(()=>{
+  wss.clients.forEach(ws=>{
+    if(!ws.isAlive) return ws.terminate();
+    ws.isAlive=false;
     ws.ping();
   });
-}, 30000);
-
-wss.on('close', () => {
-  clearInterval(heartbeatInterval);
-});
+},30000);

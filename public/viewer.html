@@ -27,6 +27,7 @@ html, body {
   height: 100%;
   background-size: cover;
   background-position: center;
+  transition: opacity 0.5s;
 }
 
 #character {
@@ -34,21 +35,44 @@ html, body {
   left: 50%;
   top: 50%;
   transform-origin: center;
+  transition: filter 0.3s, opacity 0.3s;
 }
 
+/* Visual Novel Style Dialogue Box (Fruit of Grisaia inspired) */
 #dialogueBox {
   position: absolute;
-  background: rgba(0, 0, 0, 0.85);
-  border: 3px solid #fff;
-  padding: 20px 30px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.95) 0%, rgba(10,10,30,0.95) 100%);
+  border: 3px solid rgba(255,255,255,0.8);
+  border-radius: 12px;
+  padding: 20px 30px 20px 30px;
   box-sizing: border-box;
   display: none;
   cursor: pointer;
-  /* Dynamic properties will be set via JavaScript */
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1);
 }
 
 #dialogueBox.visible {
   display: block;
+}
+
+#characterNameBox {
+  position: absolute;
+  top: -15px;
+  left: 30px;
+  background: linear-gradient(135deg, #1a4d7a 0%, #2a6a9a 100%);
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 2px solid rgba(255,255,255,0.9);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+#characterName {
+  color: #fff;
+  font-family: 'Georgia', serif;
+  font-size: 18px;
+  font-weight: bold;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+  letter-spacing: 1px;
 }
 
 #dialogueText {
@@ -58,7 +82,8 @@ html, body {
   white-space: pre-wrap;
   overflow-wrap: break-word;
   overflow: hidden;
-  /* Dynamic properties will be set via JavaScript */
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+  margin-top: 10px;
 }
 
 #continueIndicator {
@@ -68,6 +93,7 @@ html, body {
   color: #fff;
   font-size: 20px;
   animation: blink 1s infinite;
+  text-shadow: 0 0 8px rgba(255,255,255,0.8);
 }
 
 @keyframes blink {
@@ -75,6 +101,7 @@ html, body {
   51%, 100% { opacity: 0; }
 }
 
+/* Phone Chat Panel */
 #chatPanel {
   position: absolute;
   right: 20px;
@@ -89,6 +116,7 @@ html, body {
   display: flex;
   flex-direction: column;
   border: 8px solid #2a2a2a;
+  transition: filter 0.3s, opacity 0.3s;
 }
 
 #chatPanel::before {
@@ -241,6 +269,12 @@ html, body {
 #sendButton:active {
   transform: scale(0.95);
 }
+
+img {
+  user-drag: none;
+  -webkit-user-drag: none;
+  user-select: none;
+}
 </style>
 </head>
 <body>
@@ -249,21 +283,23 @@ html, body {
   <div id="background"></div>
   <img id="character">
   <div id="dialogueBox">
+    <div id="characterNameBox">
+      <div id="characterName"></div>
+    </div>
     <div id="dialogueText"></div>
     <div id="continueIndicator">▼</div>
   </div>
   
-  <!-- Chat History Panel -->
   <div id="chatPanel">
     <div id="chatHistory"></div>
-    
-    <!-- Viewer Input Box (inside phone) -->
     <div id="viewerInputBox">
       <input type="text" id="viewerInput" placeholder="Type your message...">
-      <button id="sendButton">Send</button>
+      <button id="sendButton">➤</button>
     </div>
   </div>
 </div>
+
+<audio id="musicPlayer" loop style="display:none"></audio>
 
 <script>
 const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -271,139 +307,20 @@ const wsHost = window.location.host || 'localhost:8080';
 let ws;
 let reconnectAttempts = 0;
 const maxReconnectAttempts = 10;
-const reconnectDelay = 3000; // 3 seconds
-
-function connectWebSocket() {
-  ws = new WebSocket(`${wsProtocol}//${wsHost}`);
-  
-  ws.onopen = () => {
-    console.log('WebSocket connected');
-    reconnectAttempts = 0;
-    
-    // Show connection status
-    document.body.style.borderTop = '3px solid green';
-    setTimeout(() => {
-      document.body.style.borderTop = '';
-    }, 2000);
-  };
-  
-  ws.onerror = (error) => {
-    console.error('WebSocket error:', error);
-  };
-  
-  ws.onclose = () => {
-    console.log('WebSocket disconnected');
-    
-    // Show disconnection status
-    document.body.style.borderTop = '3px solid red';
-    
-    // Attempt to reconnect
-    if (reconnectAttempts < maxReconnectAttempts) {
-      reconnectAttempts++;
-      console.log(`Reconnecting... Attempt ${reconnectAttempts}/${maxReconnectAttempts}`);
-      setTimeout(connectWebSocket, reconnectDelay);
-    } else {
-      console.error('Max reconnection attempts reached');
-      alert('Connection lost. Please refresh the page.');
-    }
-  };
-  
-  ws.onmessage = handleWebSocketMessage;
-}
-
-function handleWebSocketMessage(e) {
-  try {
-    const data = JSON.parse(e.data);
-    
-    // Handle different message types
-    if (data.type === 'chatHistory') {
-      // Load chat history
-      chatHistory.innerHTML = '';
-      data.messages.forEach(msg => {
-        addChatMessage(msg.message, msg.sender, msg.timestamp);
-      });
-      return;
-    }
-    
-    if (data.type === 'newChatMessage') {
-      addChatMessage(data.message, data.sender, data.timestamp);
-      return;
-    }
-    
-    if (data.type === 'controllerPresence') {
-      // Update chat overlay based on controller presence
-      const chatPanel = document.getElementById('chatPanel');
-      if (!data.active) {
-        chatPanel.style.filter = 'brightness(0.3)';
-        chatPanel.style.pointerEvents = 'none';
-      } else {
-        chatPanel.style.filter = 'brightness(1)';
-        chatPanel.style.pointerEvents = 'auto';
-      }
-      return;
-    }
-
-    // Regular state update
-    const s = data;
-
-    // Update dialogue settings if provided
-    if (s.dialogueSettings) {
-      currentSettings = s.dialogueSettings;
-      applyDialogueBoxStyle(currentSettings);
-    }
-
-    // Update background
-    if (s.background) {
-      bg.style.backgroundImage = `url(${s.background})`;
-    } else {
-      bg.style.backgroundImage = "";
-    }
-
-    // Update character
-    if (s.file) {
-      char.src = `sprites/${s.emotion}/${s.file}`;
-    }
-
-    char.style.transform =
-      `translate(${s.x}px, ${s.y}px) scale(${s.zoom}) translate(-50%, -50%)`;
-    
-    // Update dialogue
-    if (s.dialogue && s.dialogue.trim()) {
-      // Clear any ongoing typewriter effect
-      if (typewriterTimeout) {
-        clearTimeout(typewriterTimeout);
-      }
-      
-      dialoguePages = splitDialogueIntoPages(s.dialogue, currentSettings);
-      currentPage = 0;
-      dialogueBox.classList.add('visible');
-      showDialoguePage();
-    } else if (s.dialogue === null || s.dialogue === '') {
-      if (typewriterTimeout) {
-        clearTimeout(typewriterTimeout);
-      }
-      dialogueBox.classList.remove('visible');
-      dialoguePages = [];
-      currentPage = 0;
-      isTyping = false;
-    }
-  } catch (error) {
-    console.error('Error handling message:', error);
-  }
-}
-
-// Start connection
-connectWebSocket();
+const reconnectDelay = 3000;
 
 const stage = document.getElementById("stage");
 const bg = document.getElementById("background");
 const char = document.getElementById("character");
 const dialogueBox = document.getElementById("dialogueBox");
 const dialogueText = document.getElementById("dialogueText");
+const characterName = document.getElementById("characterName");
+const characterNameBox = document.getElementById("characterNameBox");
 const continueIndicator = document.getElementById("continueIndicator");
 const chatHistory = document.getElementById("chatHistory");
 const viewerInput = document.getElementById("viewerInput");
 const sendButton = document.getElementById("sendButton");
+const musicPlayer = document.getElementById("musicPlayer");
 
 let dialoguePages = [];
 let currentPage = 0;
@@ -413,12 +330,14 @@ let currentSettings = {
   typeSpeed: 50,
   fontFamily: 'Arial',
   fontSize: 24,
-  boxWidth: 1100,
-  boxHeight: 140,
+  boxWidth: 800,
+  boxHeight: 160,
   borderRadius: 8,
-  positionX: 50,
+  positionX: 35,
   positionY: 40
 };
+let currentTypeSound = null;
+let typeSoundAudio = null;
 
 // Presence detection
 let isViewerActive = true;
@@ -428,99 +347,167 @@ let presenceInterval;
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
 function playTypeSound() {
-  // Animal Crossing-like type sound
-  const oscillator = audioContext.createOscillator();
-  const gainNode = audioContext.createGain();
-  
-  oscillator.connect(gainNode);
-  gainNode.connect(audioContext.destination);
-  
-  // Random pitch for variety
-  const baseFreq = 800;
-  const variation = Math.random() * 200 - 100;
-  oscillator.frequency.value = baseFreq + variation;
-  
-  oscillator.type = 'square';
-  gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.05);
-  
-  oscillator.start(audioContext.currentTime);
-  oscillator.stop(audioContext.currentTime + 0.05);
-}
-
-function playMessageReceivedSound() {
-  // Notification sound for incoming viewer message
-  const oscillator1 = audioContext.createOscillator();
-  const oscillator2 = audioContext.createOscillator();
-  const gainNode = audioContext.createGain();
-  
-  oscillator1.connect(gainNode);
-  oscillator2.connect(gainNode);
-  gainNode.connect(audioContext.destination);
-  
-  oscillator1.frequency.value = 800;
-  oscillator2.frequency.value = 1000;
-  oscillator1.type = 'sine';
-  oscillator2.type = 'sine';
-  
-  gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-  
-  oscillator1.start(audioContext.currentTime);
-  oscillator2.start(audioContext.currentTime);
-  oscillator1.stop(audioContext.currentTime + 0.3);
-  oscillator2.stop(audioContext.currentTime + 0.3);
-}
-
-// Detect if viewer is active on page
-function updatePresenceStatus() {
-  const wasActive = isViewerActive;
-  isViewerActive = !document.hidden;
-  
-  if (wasActive !== isViewerActive) {
-    // Send presence update to server
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({
-        type: 'viewerPresence',
-        active: isViewerActive
-      }));
-    }
-    
-    // Visual feedback
-    if (!isViewerActive) {
-      // Add dark overlay to character when viewer is away
-      char.style.filter = 'brightness(0.3)';
-    } else {
-      char.style.filter = 'brightness(1)';
-    }
+  if (currentTypeSound && typeSoundAudio) {
+    try {
+      const clone = typeSoundAudio.cloneNode();
+      clone.volume = 0.3;
+      clone.play().catch(e => {});
+    } catch(e) {}
+  } else {
+    // Default synthesized sound
+    try {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      const baseFreq = 800;
+      const variation = Math.random() * 200 - 100;
+      oscillator.frequency.value = baseFreq + variation;
+      oscillator.type = 'square';
+      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.05);
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.05);
+    } catch(e) {}
   }
 }
 
-// Listen for visibility changes
-document.addEventListener('visibilitychange', updatePresenceStatus);
+function scaleStage() {
+  const s = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+  stage.style.transform = `translate(-50%, -50%) scale(${s})`;
+}
+window.addEventListener("resize", scaleStage);
+scaleStage();
 
-// Send presence heartbeat every 5 seconds
-function startPresenceHeartbeat() {
-  presenceInterval = setInterval(() => {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({
-        type: 'viewerPresence',
-        active: !document.hidden
-      }));
-    }
-  }, 5000);
+function applyDialogueBoxStyle(settings) {
+  dialogueBox.style.width = settings.boxWidth + 'px';
+  dialogueBox.style.minHeight = settings.boxHeight + 'px';
+  dialogueBox.style.borderRadius = settings.borderRadius + 'px';
+  dialogueBox.style.bottom = settings.positionY + 'px';
+  dialogueBox.style.left = settings.positionX + '%';
+  dialogueBox.style.transform = 'translateX(-50%)';
+  
+  dialogueText.style.fontFamily = settings.fontFamily;
+  dialogueText.style.fontSize = settings.fontSize + 'px';
+  
+  const lineHeight = settings.fontSize * 1.6;
+  const maxHeight = lineHeight * 2;
+  dialogueText.style.maxHeight = maxHeight + 'px';
 }
 
-// Start heartbeat when connected
-window.addEventListener('load', () => {
-  startPresenceHeartbeat();
-  updatePresenceStatus();
+function splitDialogueIntoPages(text, settings) {
+  if (!text) return [];
+  const pages = [];
+  let currentLines = [];
+  const measureDiv = document.createElement('div');
+  measureDiv.style.cssText = `position:absolute;visibility:hidden;width:${settings.boxWidth-60}px;font-family:${settings.fontFamily};font-size:${settings.fontSize}px;line-height:1.6;white-space:pre-wrap;word-wrap:break-word;`;
+  document.body.appendChild(measureDiv);
+  const manualLines = text.split('\n');
+  const lineHeight = settings.fontSize * 1.6;
+  
+  for (let manualLine of manualLines) {
+    if (!manualLine.trim()) {
+      if (currentLines.length >= 2) {
+        pages.push(currentLines.join('\n'));
+        currentLines = [''];
+      } else {
+        currentLines.push('');
+      }
+      continue;
+    }
+    measureDiv.textContent = manualLine;
+    const visualLines = Math.ceil(measureDiv.offsetHeight / lineHeight);
+    if (currentLines.length + visualLines > 2) {
+      if (currentLines.length > 0) pages.push(currentLines.join('\n'));
+      if (visualLines > 2) {
+        const words = manualLine.split(' ');
+        let tempLine = '';
+        for (let word of words) {
+          const testLine = tempLine + (tempLine ? ' ' : '') + word;
+          measureDiv.textContent = testLine;
+          const testVisualLines = Math.ceil(measureDiv.offsetHeight / lineHeight);
+          if (testVisualLines > 2) {
+            pages.push(tempLine);
+            tempLine = word;
+          } else {
+            tempLine = testLine;
+          }
+        }
+        currentLines = tempLine ? [tempLine] : [];
+      } else {
+        currentLines = [manualLine];
+      }
+    } else {
+      currentLines.push(manualLine);
+    }
+  }
+  if (currentLines.length > 0 && currentLines.some(line => line.trim())) {
+    pages.push(currentLines.join('\n'));
+  }
+  document.body.removeChild(measureDiv);
+  return pages;
+}
+
+function typewriterEffect(text, callback) {
+  isTyping = true;
+  continueIndicator.style.display = 'none';
+  let charIndex = 0;
+  dialogueText.textContent = '';
+  
+  function typeNextChar() {
+    if (charIndex < text.length) {
+      dialogueText.textContent += text[charIndex];
+      if (text[charIndex] !== ' ' && text[charIndex] !== '\n') {
+        playTypeSound();
+      }
+      charIndex++;
+      typewriterTimeout = setTimeout(typeNextChar, currentSettings.typeSpeed);
+    } else {
+      isTyping = false;
+      if (callback) callback();
+    }
+  }
+  typeNextChar();
+}
+
+function showDialoguePage() {
+  if (currentPage < dialoguePages.length) {
+    ws.send(JSON.stringify({
+      type: 'controllerMessage',
+      message: dialoguePages[currentPage],
+      timestamp: Date.now()
+    }));
+    typewriterEffect(dialoguePages[currentPage], () => {
+      if (currentPage < dialoguePages.length - 1) {
+        continueIndicator.style.display = 'block';
+      } else {
+        continueIndicator.style.display = 'none';
+      }
+    });
+  }
+}
+
+dialogueBox.addEventListener('click', () => {
+  if (isTyping) {
+    clearTimeout(typewriterTimeout);
+    dialogueText.textContent = dialoguePages[currentPage];
+    isTyping = false;
+    if (currentPage < dialoguePages.length - 1) {
+      continueIndicator.style.display = 'block';
+    } else {
+      continueIndicator.style.display = 'none';
+    }
+  } else if (currentPage < dialoguePages.length - 1) {
+    currentPage++;
+    showDialoguePage();
+  } else {
+    dialogueBox.classList.remove('visible');
+  }
 });
 
-// Chat functionality
 function sendViewerMessage() {
   const message = viewerInput.value.trim();
-  if (message) {
+  if (message && ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({
       type: 'viewerMessage',
       message: message,
@@ -540,11 +527,9 @@ viewerInput.addEventListener('keypress', (e) => {
 function addChatMessage(message, sender, timestamp) {
   const messageDiv = document.createElement('div');
   messageDiv.className = `chat-message ${sender}`;
-  
   const textSpan = document.createElement('span');
   textSpan.textContent = message;
   messageDiv.appendChild(textSpan);
-  
   if (timestamp) {
     const timeSpan = document.createElement('span');
     timeSpan.className = 'timestamp';
@@ -552,264 +537,191 @@ function addChatMessage(message, sender, timestamp) {
     timeSpan.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     messageDiv.appendChild(timeSpan);
   }
-  
   chatHistory.appendChild(messageDiv);
-  
-  // Limit chat history to 100 messages
   const maxMessages = 100;
   while (chatHistory.children.length > maxMessages) {
     chatHistory.removeChild(chatHistory.firstChild);
   }
-  
-  // Auto-scroll to bottom
-  const chatPanel = document.getElementById('chatPanel');
-  chatPanel.scrollTop = chatPanel.scrollHeight;
+  requestAnimationFrame(() => {
+    const chatPanel = document.getElementById('chatPanel');
+    chatPanel.scrollTop = chatPanel.scrollHeight;
+  });
 }
 
-function applyDialogueBoxStyle(settings) {
-  dialogueBox.style.width = settings.boxWidth + 'px';
-  dialogueBox.style.minHeight = settings.boxHeight + 'px';
-  dialogueBox.style.borderRadius = settings.borderRadius + 'px';
-  dialogueBox.style.bottom = settings.positionY + 'px';
-  dialogueBox.style.left = settings.positionX + '%';
-  dialogueBox.style.transform = 'translateX(-50%)';
-  
-  dialogueText.style.fontFamily = settings.fontFamily;
-  dialogueText.style.fontSize = settings.fontSize + 'px';
-  
-  // Calculate max height for 2 lines
-  const lineHeight = settings.fontSize * 1.6;
-  const maxHeight = lineHeight * 2;
-  dialogueText.style.maxHeight = maxHeight + 'px';
-}
-
-function scaleStage() {
-  const s = Math.min(
-    window.innerWidth / 1280,
-    window.innerHeight / 720
-  );
-  stage.style.transform =
-    `translate(-50%, -50%) scale(${s})`;
-}
-window.addEventListener("resize", scaleStage);
-scaleStage();
-
-// Split dialogue into pages (2 lines max per page)
-function splitDialogueIntoPages(text, settings) {
-  if (!text) return [];
-  
-  const pages = [];
-  let currentLines = [];
-  
-  // Create a temporary element to measure text
-  const measureDiv = document.createElement('div');
-  measureDiv.style.cssText = `
-    position: absolute;
-    visibility: hidden;
-    width: ${settings.boxWidth - 60}px;
-    font-family: ${settings.fontFamily};
-    font-size: ${settings.fontSize}px;
-    line-height: 1.6;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-  `;
-  document.body.appendChild(measureDiv);
-  
-  // Split by manual line breaks first
-  const manualLines = text.split('\n');
-  const lineHeight = settings.fontSize * 1.6;
-  
-  for (let manualLine of manualLines) {
-    if (!manualLine.trim()) {
-      // Empty line counts as one line
-      if (currentLines.length >= 2) {
-        pages.push(currentLines.join('\n'));
-        currentLines = [''];
-      } else {
-        currentLines.push('');
-      }
-      continue;
-    }
-    
-    // Measure how many visual lines this manual line takes
-    measureDiv.textContent = manualLine;
-    const visualLines = Math.ceil(measureDiv.offsetHeight / lineHeight);
-    
-    if (currentLines.length + visualLines > 2) {
-      // Would exceed 2 lines, start new page
-      if (currentLines.length > 0) {
-        pages.push(currentLines.join('\n'));
-      }
-      
-      // If this single line is more than 2 visual lines, we need to split it
-      if (visualLines > 2) {
-        const words = manualLine.split(' ');
-        let tempLine = '';
-        
-        for (let word of words) {
-          const testLine = tempLine + (tempLine ? ' ' : '') + word;
-          measureDiv.textContent = testLine;
-          const testVisualLines = Math.ceil(measureDiv.offsetHeight / lineHeight);
-          
-          if (testVisualLines > 2) {
-            // Add what we have so far as a page
-            pages.push(tempLine);
-            tempLine = word;
-          } else {
-            tempLine = testLine;
-          }
-        }
-        
-        currentLines = tempLine ? [tempLine] : [];
-      } else {
-        currentLines = [manualLine];
-      }
+function updatePresenceStatus() {
+  const wasActive = isViewerActive;
+  isViewerActive = !document.hidden;
+  if (wasActive !== isViewerActive) {
+    if (!isViewerActive) {
+      char.style.filter = 'brightness(0.3) grayscale(0.5)';
+      char.style.opacity = '0.5';
     } else {
-      currentLines.push(manualLine);
+      char.style.filter = 'brightness(1) grayscale(0)';
+      char.style.opacity = '1';
     }
-  }
-  
-  // Add remaining lines
-  if (currentLines.length > 0 && currentLines.some(line => line.trim())) {
-    pages.push(currentLines.join('\n'));
-  }
-  
-  document.body.removeChild(measureDiv);
-  return pages;
-}
-
-function typewriterEffect(text, callback) {
-  isTyping = true;
-  continueIndicator.style.display = 'none';
-  let charIndex = 0;
-  dialogueText.textContent = '';
-  
-  function typeNextChar() {
-    if (charIndex < text.length) {
-      dialogueText.textContent += text[charIndex];
-      
-      // Play type sound for visible characters (not spaces)
-      if (text[charIndex] !== ' ' && text[charIndex] !== '\n') {
-        playTypeSound();
-      }
-      
-      charIndex++;
-      typewriterTimeout = setTimeout(typeNextChar, currentSettings.typeSpeed);
-    } else {
-      isTyping = false;
-      if (callback) callback();
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'viewerPresence',
+        active: isViewerActive
+      }));
     }
-  }
-  
-  typeNextChar();
-}
-
-function showDialoguePage() {
-  if (currentPage < dialoguePages.length) {
-    // Send this page as a chat message
-    ws.send(JSON.stringify({
-      type: 'controllerMessage',
-      message: dialoguePages[currentPage],
-      timestamp: Date.now()
-    }));
-    
-    typewriterEffect(dialoguePages[currentPage], () => {
-      // Show continue indicator after typing finishes
-      if (currentPage < dialoguePages.length - 1) {
-        continueIndicator.style.display = 'block';
-      } else {
-        continueIndicator.style.display = 'none';
-      }
-    });
   }
 }
 
-// Click to advance dialogue or skip typing
-dialogueBox.addEventListener('click', () => {
-  if (isTyping) {
-    // Skip to end of current page
-    clearTimeout(typewriterTimeout);
-    dialogueText.textContent = dialoguePages[currentPage];
-    isTyping = false;
-    
-    // Show continue indicator if there are more pages
-    if (currentPage < dialoguePages.length - 1) {
-      continueIndicator.style.display = 'block';
-    } else {
-      continueIndicator.style.display = 'none';
+document.addEventListener('visibilitychange', updatePresenceStatus);
+
+function startPresenceHeartbeat() {
+  presenceInterval = setInterval(() => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'viewerPresence',
+        active: !document.hidden
+      }));
     }
-  } else if (currentPage < dialoguePages.length - 1) {
-    currentPage++;
-    showDialoguePage();
-  } else {
-    // Hide dialogue box when finished
-    dialogueBox.classList.remove('visible');
-  }
+  }, 5000);
+}
+
+window.addEventListener('load', () => {
+  startPresenceHeartbeat();
+  updatePresenceStatus();
 });
 
-ws.onmessage = e => {
-  const data = JSON.parse(e.data);
+function connectWebSocket() {
+  ws = new WebSocket(`${wsProtocol}//${wsHost}`);
   
-  // Handle different message types
-  if (data.type === 'chatHistory') {
-    // Load chat history
-    chatHistory.innerHTML = '';
-    data.messages.forEach(msg => {
-      addChatMessage(msg.message, msg.sender, msg.timestamp);
-    });
-    return;
-  }
+  ws.onopen = () => {
+    console.log('WebSocket connected');
+    reconnectAttempts = 0;
+    document.body.style.borderTop = '3px solid green';
+    setTimeout(() => {
+      document.body.style.borderTop = '';
+    }, 2000);
+  };
   
-  if (data.type === 'newChatMessage') {
-    addChatMessage(data.message, data.sender, data.timestamp);
-    return;
-  }
-
-  // Regular state update
-  const s = data;
-
-  // Update dialogue settings if provided
-  if (s.dialogueSettings) {
-    currentSettings = s.dialogueSettings;
-    applyDialogueBoxStyle(currentSettings);
-  }
-
-  // Update background
-  if (s.background) {
-    bg.style.backgroundImage = `url(${s.background})`;
-  } else {
-    bg.style.backgroundImage = "";
-  }
-
-  // Update character
-  if (s.file) {
-    char.src = `sprites/${s.emotion}/${s.file}`;
-  }
-
-  char.style.transform =
-    `translate(${s.x}px, ${s.y}px) scale(${s.zoom}) translate(-50%, -50%)`;
+  ws.onerror = (error) => {
+    console.error('WebSocket error:', error);
+  };
   
-  // Update dialogue
-  if (s.dialogue && s.dialogue.trim()) {
-    // Clear any ongoing typewriter effect
-    if (typewriterTimeout) {
-      clearTimeout(typewriterTimeout);
+  ws.onclose = () => {
+    console.log('WebSocket disconnected');
+    document.body.style.borderTop = '3px solid red';
+    if (reconnectAttempts < maxReconnectAttempts) {
+      reconnectAttempts++;
+      console.log(`Reconnecting... Attempt ${reconnectAttempts}/${maxReconnectAttempts}`);
+      setTimeout(connectWebSocket, reconnectDelay);
+    } else {
+      alert('Connection lost. Please refresh the page.');
+    }
+  };
+  
+  ws.onmessage = handleWebSocketMessage;
+}
+
+function handleWebSocketMessage(e) {
+  try {
+    const data = JSON.parse(e.data);
+    
+    if (data.type === 'chatHistory') {
+      chatHistory.innerHTML = '';
+      data.messages.forEach(msg => {
+        addChatMessage(msg.message, msg.sender, msg.timestamp);
+      });
+      return;
     }
     
-    dialoguePages = splitDialogueIntoPages(s.dialogue, currentSettings);
-    currentPage = 0;
-    dialogueBox.classList.add('visible');
-    showDialoguePage();
-  } else if (s.dialogue === null || s.dialogue === '') {
-    if (typewriterTimeout) {
-      clearTimeout(typewriterTimeout);
+    if (data.type === 'newChatMessage') {
+      addChatMessage(data.message, data.sender, data.timestamp);
+      return;
     }
-    dialogueBox.classList.remove('visible');
-    dialoguePages = [];
-    currentPage = 0;
-    isTyping = false;
+    
+    if (data.type === 'presenceState') {
+      const chatPanel = document.getElementById('chatPanel');
+      if (!data.data.controllerActive) {
+        chatPanel.style.filter = 'brightness(0.3)';
+        chatPanel.style.pointerEvents = 'none';
+        chatPanel.style.opacity = '0.5';
+      } else {
+        chatPanel.style.filter = 'brightness(1)';
+        chatPanel.style.pointerEvents = 'auto';
+        chatPanel.style.opacity = '1';
+      }
+      return;
+    }
+    
+    if (data.type === 'visualState') {
+      if (data.data.file && data.data.emotion) {
+        char.src = `sprites/${data.data.emotion}/${data.data.file}`;
+      }
+      char.style.transform = `translate(${data.data.x}px, ${data.data.y}px) scale(${data.data.zoom}) translate(-50%, -50%)`;
+      return;
+    }
+    
+    if (data.type === 'environmentState') {
+      if (data.data.background) {
+        bg.style.backgroundImage = `url(${data.data.background})`;
+        bg.style.opacity = '1';
+      } else {
+        bg.style.backgroundImage = "";
+      }
+      
+      if (data.data.music) {
+        if (musicPlayer.src !== `music/${data.data.music}`) {
+          musicPlayer.src = `music/${data.data.music}`;
+          musicPlayer.volume = data.data.musicVolume || 0.5;
+          musicPlayer.play().catch(e => {});
+        }
+      } else {
+        musicPlayer.pause();
+        musicPlayer.src = '';
+      }
+      
+      if (data.data.musicVolume !== undefined) {
+        musicPlayer.volume = data.data.musicVolume;
+      }
+      return;
+    }
+    
+    if (data.type === 'dialogueState') {
+      currentSettings = data.data.settings;
+      applyDialogueBoxStyle(currentSettings);
+      
+      if (data.data.characterName) {
+        characterName.textContent = data.data.characterName;
+        characterNameBox.style.display = 'block';
+      } else {
+        characterNameBox.style.display = 'none';
+      }
+      
+      if (data.data.typeSound) {
+        currentTypeSound = data.data.typeSound;
+        typeSoundAudio = new Audio(`sounds/${data.data.typeSound}`);
+        typeSoundAudio.preload = 'auto';
+      } else {
+        currentTypeSound = null;
+        typeSoundAudio = null;
+      }
+      
+      if (data.data.text && data.data.text.trim()) {
+        if (typewriterTimeout) clearTimeout(typewriterTimeout);
+        dialoguePages = splitDialogueIntoPages(data.data.text, currentSettings);
+        currentPage = 0;
+        dialogueBox.classList.add('visible');
+        showDialoguePage();
+      } else if (data.data.text === null || data.data.text === '') {
+        if (typewriterTimeout) clearTimeout(typewriterTimeout);
+        dialogueBox.classList.remove('visible');
+        dialoguePages = [];
+        currentPage = 0;
+        isTyping = false;
+      }
+      return;
+    }
+  } catch (error) {
+    console.error('Error handling message:', error);
   }
-};
+}
+
+connectWebSocket();
 </script>
 
 </body>
