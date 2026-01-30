@@ -67,7 +67,7 @@ const server = app.listen(PORT, () => console.log(`Server on port ${PORT}`));
 const wss = new WebSocket.Server({ server });
 
 const state = {
-  visual: { emotion:null, file:null, x:0, y:0, zoom:1 },
+  visual: { emotion:null, file:null, x:0, y:0, zoom:1, lighting:{ brightness:100, contrast:100, tintColor:'#ffffff', tintIntensity:0 } },
   environment: { background:null, music:null, musicVolume:0.5 },
   dialogue: { text:null, characterName:'', typeSound:null, settings:{ typeSpeed:50, fontFamily:'Arial', fontSize:24, boxWidth:800, boxHeight:160, borderRadius:8, positionX:35, positionY:40, textEffect:'none' }},
   presence: { controllerActive:false, viewerActive:false }
