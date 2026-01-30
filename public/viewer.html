@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+}
+
+#stage {
+  position: absolute;
+  width: 1280px;
+  height: 720px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  overflow: hidden;
+}
+
+#background {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+}
+
+#character {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform-origin: center;
+}
+
+#dialogueBox {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.85);
+  border: 3px solid #fff;
+  padding: 20px 30px;
+  box-sizing: border-box;
+  display: none;
+  cursor: pointer;
+  /* Dynamic properties will be set via JavaScript */
+}
+
+#dialogueBox.visible {
+  display: block;
+}
+
+#dialogueText {
+  color: #fff;
+  line-height: 1.6;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  overflow: hidden;
+  /* Dynamic properties will be set via JavaScript */
+}
+
+#continueIndicator {
+  position: absolute;
+  bottom: 10px;
+  right: 20px;
+  color: #fff;
+  font-size: 20px;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+#chatPanel {
+  position: absolute;
+  right: 20px;
+  top: 20px;
+  width: 320px;
+  height: 640px;
+  background: #000;
+  border-radius: 35px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), inset 0 0 0 8px #1a1a1a;
+  overflow: hidden;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border: 8px solid #2a2a2a;
+}
+
+#chatPanel::before {
+  content: '';
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 6px;
+  background: #333;
+  border-radius: 3px;
+  z-index: 10;
+}
+
+#chatPanel::after {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%) translateX(-50px);
+  width: 12px;
+  height: 12px;
+  background: #1a1a1a;
+  border-radius: 50%;
+  z-index: 10;
+}
+
+#chatHistory {
+  flex: 1;
+  overflow-y: auto;
+  padding: 35px 15px 80px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #000;
+}
+
+#chatHistory::-webkit-scrollbar {
+  width: 6px;
+}
+
+#chatHistory::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+
+#chatHistory::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 3px;
+}
+
+.chat-message {
+  max-width: 75%;
+  padding: 12px 16px;
+  border-radius: 20px;
+  word-wrap: break-word;
+  font-size: 14px;
+  line-height: 1.4;
+  animation: slideIn 0.3s ease-out;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chat-message.controller {
+  background: linear-gradient(135deg, #0084ff 0%, #0066cc 100%);
+  color: white;
+  align-self: flex-start;
+  border-bottom-left-radius: 6px;
+}
+
+.chat-message.viewer {
+  background: linear-gradient(135deg, #3a3a3a 0%, #2a2a2a 100%);
+  color: #e5e5e5;
+  align-self: flex-end;
+  border-bottom-right-radius: 6px;
+}
+
+.chat-message .timestamp {
+  font-size: 10px;
+  opacity: 0.7;
+  margin-top: 4px;
+  display: block;
+}
+
+#viewerInputBox {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 290px;
+  height: 50px;
+  background: #1a1a1a;
+  border-radius: 25px;
+  display: flex;
+  padding: 4px;
+  gap: 6px;
+  align-items: center;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
+}
+
+#viewerInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: #fff;
+  padding: 10px 16px;
+  font-size: 14px;
+  outline: none;
+  font-family: sans-serif;
+}
+
+#viewerInput::placeholder {
+  color: #666;
+}
+
+#sendButton {
+  background: linear-gradient(135deg, #0084ff 0%, #0066cc 100%);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 2px;
+  box-shadow: 0 2px 8px rgba(0, 132, 255, 0.4);
+  flex-shrink: 0;
+}
+
+#sendButton:hover {
+  background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+  transform: scale(1.05);
+}
+
+#sendButton:active {
+  transform: scale(0.95);
+}
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div id="background"></div>
+  <img id="character">
+  <div id="dialogueBox">
+    <div id="dialogueText"></div>
+    <div id="continueIndicator">▼</div>
+  </div>
+  
+  <!-- Chat History Panel -->
+  <div id="chatPanel">
+    <div id="chatHistory"></div>
+    
+    <!-- Viewer Input Box (inside phone) -->
+    <div id="viewerInputBox">
+      <input type="text" id="viewerInput" placeholder="Type your message...">
+      <button id="sendButton">Send</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+const wsHost = window.location.host || 'localhost:8080';
+let ws;
+let reconnectAttempts = 0;
+const maxReconnectAttempts = 10;
+const reconnectDelay = 3000; // 3 seconds
+
+function connectWebSocket() {
+  ws = new WebSocket(`${wsProtocol}//${wsHost}`);
+  
+  ws.onopen = () => {
+    console.log('WebSocket connected');
+    reconnectAttempts = 0;
+    
+    // Show connection status
+    document.body.style.borderTop = '3px solid green';
+    setTimeout(() => {
+      document.body.style.borderTop = '';
+    }, 2000);
+  };
+  
+  ws.onerror = (error) => {
+    console.error('WebSocket error:', error);
+  };
+  
+  ws.onclose = () => {
+    console.log('WebSocket disconnected');
+    
+    // Show disconnection status
+    document.body.style.borderTop = '3px solid red';
+    
+    // Attempt to reconnect
+    if (reconnectAttempts < maxReconnectAttempts) {
+      reconnectAttempts++;
+      console.log(`Reconnecting... Attempt ${reconnectAttempts}/${maxReconnectAttempts}`);
+      setTimeout(connectWebSocket, reconnectDelay);
+    } else {
+      console.error('Max reconnection attempts reached');
+      alert('Connection lost. Please refresh the page.');
+    }
+  };
+  
+  ws.onmessage = handleWebSocketMessage;
+}
+
+function handleWebSocketMessage(e) {
+  try {
+    const data = JSON.parse(e.data);
+    
+    // Handle different message types
+    if (data.type === 'chatHistory') {
+      // Load chat history
+      chatHistory.innerHTML = '';
+      data.messages.forEach(msg => {
+        addChatMessage(msg.message, msg.sender, msg.timestamp);
+      });
+      return;
+    }
+    
+    if (data.type === 'newChatMessage') {
+      addChatMessage(data.message, data.sender, data.timestamp);
+      return;
+    }
+    
+    if (data.type === 'controllerPresence') {
+      // Update chat overlay based on controller presence
+      const chatPanel = document.getElementById('chatPanel');
+      if (!data.active) {
+        chatPanel.style.filter = 'brightness(0.3)';
+        chatPanel.style.pointerEvents = 'none';
+      } else {
+        chatPanel.style.filter = 'brightness(1)';
+        chatPanel.style.pointerEvents = 'auto';
+      }
+      return;
+    }
+
+    // Regular state update
+    const s = data;
+
+    // Update dialogue settings if provided
+    if (s.dialogueSettings) {
+      currentSettings = s.dialogueSettings;
+      applyDialogueBoxStyle(currentSettings);
+    }
+
+    // Update background
+    if (s.background) {
+      bg.style.backgroundImage = `url(${s.background})`;
+    } else {
+      bg.style.backgroundImage = "";
+    }
+
+    // Update character
+    if (s.file) {
+      char.src = `sprites/${s.emotion}/${s.file}`;
+    }
+
+    char.style.transform =
+      `translate(${s.x}px, ${s.y}px) scale(${s.zoom}) translate(-50%, -50%)`;
+    
+    // Update dialogue
+    if (s.dialogue && s.dialogue.trim()) {
+      // Clear any ongoing typewriter effect
+      if (typewriterTimeout) {
+        clearTimeout(typewriterTimeout);
+      }
+      
+      dialoguePages = splitDialogueIntoPages(s.dialogue, currentSettings);
+      currentPage = 0;
+      dialogueBox.classList.add('visible');
+      showDialoguePage();
+    } else if (s.dialogue === null || s.dialogue === '') {
+      if (typewriterTimeout) {
+        clearTimeout(typewriterTimeout);
+      }
+      dialogueBox.classList.remove('visible');
+      dialoguePages = [];
+      currentPage = 0;
+      isTyping = false;
+    }
+  } catch (error) {
+    console.error('Error handling message:', error);
+  }
+}
+
+// Start connection
+connectWebSocket();
+
+const stage = document.getElementById("stage");
+const bg = document.getElementById("background");
+const char = document.getElementById("character");
+const dialogueBox = document.getElementById("dialogueBox");
+const dialogueText = document.getElementById("dialogueText");
+const continueIndicator = document.getElementById("continueIndicator");
+const chatHistory = document.getElementById("chatHistory");
+const viewerInput = document.getElementById("viewerInput");
+const sendButton = document.getElementById("sendButton");
+
+let dialoguePages = [];
+let currentPage = 0;
+let isTyping = false;
+let typewriterTimeout = null;
+let currentSettings = {
+  typeSpeed: 50,
+  fontFamily: 'Arial',
+  fontSize: 24,
+  boxWidth: 1100,
+  boxHeight: 140,
+  borderRadius: 8,
+  positionX: 50,
+  positionY: 40
+};
+
+// Presence detection
+let isViewerActive = true;
+let presenceInterval;
+
+// Sound effects
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+function playTypeSound() {
+  // Animal Crossing-like type sound
+  const oscillator = audioContext.createOscillator();
+  const gainNode = audioContext.createGain();
+  
+  oscillator.connect(gainNode);
+  gainNode.connect(audioContext.destination);
+  
+  // Random pitch for variety
+  const baseFreq = 800;
+  const variation = Math.random() * 200 - 100;
+  oscillator.frequency.value = baseFreq + variation;
+  
+  oscillator.type = 'square';
+  gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.05);
+  
+  oscillator.start(audioContext.currentTime);
+  oscillator.stop(audioContext.currentTime + 0.05);
+}
+
+function playMessageReceivedSound() {
+  // Notification sound for incoming viewer message
+  const oscillator1 = audioContext.createOscillator();
+  const oscillator2 = audioContext.createOscillator();
+  const gainNode = audioContext.createGain();
+  
+  oscillator1.connect(gainNode);
+  oscillator2.connect(gainNode);
+  gainNode.connect(audioContext.destination);
+  
+  oscillator1.frequency.value = 800;
+  oscillator2.frequency.value = 1000;
+  oscillator1.type = 'sine';
+  oscillator2.type = 'sine';
+  
+  gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+  
+  oscillator1.start(audioContext.currentTime);
+  oscillator2.start(audioContext.currentTime);
+  oscillator1.stop(audioContext.currentTime + 0.3);
+  oscillator2.stop(audioContext.currentTime + 0.3);
+}
+
+// Detect if viewer is active on page
+function updatePresenceStatus() {
+  const wasActive = isViewerActive;
+  isViewerActive = !document.hidden;
+  
+  if (wasActive !== isViewerActive) {
+    // Send presence update to server
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'viewerPresence',
+        active: isViewerActive
+      }));
+    }
+    
+    // Visual feedback
+    if (!isViewerActive) {
+      // Add dark overlay to character when viewer is away
+      char.style.filter = 'brightness(0.3)';
+    } else {
+      char.style.filter = 'brightness(1)';
+    }
+  }
+}
+
+// Listen for visibility changes
+document.addEventListener('visibilitychange', updatePresenceStatus);
+
+// Send presence heartbeat every 5 seconds
+function startPresenceHeartbeat() {
+  presenceInterval = setInterval(() => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'viewerPresence',
+        active: !document.hidden
+      }));
+    }
+  }, 5000);
+}
+
+// Start heartbeat when connected
+window.addEventListener('load', () => {
+  startPresenceHeartbeat();
+  updatePresenceStatus();
+});
+
+// Chat functionality
+function sendViewerMessage() {
+  const message = viewerInput.value.trim();
+  if (message) {
+    ws.send(JSON.stringify({
+      type: 'viewerMessage',
+      message: message,
+      timestamp: Date.now()
+    }));
+    viewerInput.value = '';
+  }
+}
+
+sendButton.addEventListener('click', sendViewerMessage);
+viewerInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    sendViewerMessage();
+  }
+});
+
+function addChatMessage(message, sender, timestamp) {
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `chat-message ${sender}`;
+  
+  const textSpan = document.createElement('span');
+  textSpan.textContent = message;
+  messageDiv.appendChild(textSpan);
+  
+  if (timestamp) {
+    const timeSpan = document.createElement('span');
+    timeSpan.className = 'timestamp';
+    const date = new Date(timestamp);
+    timeSpan.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    messageDiv.appendChild(timeSpan);
+  }
+  
+  chatHistory.appendChild(messageDiv);
+  
+  // Limit chat history to 100 messages
+  const maxMessages = 100;
+  while (chatHistory.children.length > maxMessages) {
+    chatHistory.removeChild(chatHistory.firstChild);
+  }
+  
+  // Auto-scroll to bottom
+  const chatPanel = document.getElementById('chatPanel');
+  chatPanel.scrollTop = chatPanel.scrollHeight;
+}
+
+function applyDialogueBoxStyle(settings) {
+  dialogueBox.style.width = settings.boxWidth + 'px';
+  dialogueBox.style.minHeight = settings.boxHeight + 'px';
+  dialogueBox.style.borderRadius = settings.borderRadius + 'px';
+  dialogueBox.style.bottom = settings.positionY + 'px';
+  dialogueBox.style.left = settings.positionX + '%';
+  dialogueBox.style.transform = 'translateX(-50%)';
+  
+  dialogueText.style.fontFamily = settings.fontFamily;
+  dialogueText.style.fontSize = settings.fontSize + 'px';
+  
+  // Calculate max height for 2 lines
+  const lineHeight = settings.fontSize * 1.6;
+  const maxHeight = lineHeight * 2;
+  dialogueText.style.maxHeight = maxHeight + 'px';
+}
+
+function scaleStage() {
+  const s = Math.min(
+    window.innerWidth / 1280,
+    window.innerHeight / 720
+  );
+  stage.style.transform =
+    `translate(-50%, -50%) scale(${s})`;
+}
+window.addEventListener("resize", scaleStage);
+scaleStage();
+
+// Split dialogue into pages (2 lines max per page)
+function splitDialogueIntoPages(text, settings) {
+  if (!text) return [];
+  
+  const pages = [];
+  let currentLines = [];
+  
+  // Create a temporary element to measure text
+  const measureDiv = document.createElement('div');
+  measureDiv.style.cssText = `
+    position: absolute;
+    visibility: hidden;
+    width: ${settings.boxWidth - 60}px;
+    font-family: ${settings.fontFamily};
+    font-size: ${settings.fontSize}px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  `;
+  document.body.appendChild(measureDiv);
+  
+  // Split by manual line breaks first
+  const manualLines = text.split('\n');
+  const lineHeight = settings.fontSize * 1.6;
+  
+  for (let manualLine of manualLines) {
+    if (!manualLine.trim()) {
+      // Empty line counts as one line
+      if (currentLines.length >= 2) {
+        pages.push(currentLines.join('\n'));
+        currentLines = [''];
+      } else {
+        currentLines.push('');
+      }
+      continue;
+    }
+    
+    // Measure how many visual lines this manual line takes
+    measureDiv.textContent = manualLine;
+    const visualLines = Math.ceil(measureDiv.offsetHeight / lineHeight);
+    
+    if (currentLines.length + visualLines > 2) {
+      // Would exceed 2 lines, start new page
+      if (currentLines.length > 0) {
+        pages.push(currentLines.join('\n'));
+      }
+      
+      // If this single line is more than 2 visual lines, we need to split it
+      if (visualLines > 2) {
+        const words = manualLine.split(' ');
+        let tempLine = '';
+        
+        for (let word of words) {
+          const testLine = tempLine + (tempLine ? ' ' : '') + word;
+          measureDiv.textContent = testLine;
+          const testVisualLines = Math.ceil(measureDiv.offsetHeight / lineHeight);
+          
+          if (testVisualLines > 2) {
+            // Add what we have so far as a page
+            pages.push(tempLine);
+            tempLine = word;
+          } else {
+            tempLine = testLine;
+          }
+        }
+        
+        currentLines = tempLine ? [tempLine] : [];
+      } else {
+        currentLines = [manualLine];
+      }
+    } else {
+      currentLines.push(manualLine);
+    }
+  }
+  
+  // Add remaining lines
+  if (currentLines.length > 0 && currentLines.some(line => line.trim())) {
+    pages.push(currentLines.join('\n'));
+  }
+  
+  document.body.removeChild(measureDiv);
+  return pages;
+}
+
+function typewriterEffect(text, callback) {
+  isTyping = true;
+  continueIndicator.style.display = 'none';
+  let charIndex = 0;
+  dialogueText.textContent = '';
+  
+  function typeNextChar() {
+    if (charIndex < text.length) {
+      dialogueText.textContent += text[charIndex];
+      
+      // Play type sound for visible characters (not spaces)
+      if (text[charIndex] !== ' ' && text[charIndex] !== '\n') {
+        playTypeSound();
+      }
+      
+      charIndex++;
+      typewriterTimeout = setTimeout(typeNextChar, currentSettings.typeSpeed);
+    } else {
+      isTyping = false;
+      if (callback) callback();
+    }
+  }
+  
+  typeNextChar();
+}
+
+function showDialoguePage() {
+  if (currentPage < dialoguePages.length) {
+    // Send this page as a chat message
+    ws.send(JSON.stringify({
+      type: 'controllerMessage',
+      message: dialoguePages[currentPage],
+      timestamp: Date.now()
+    }));
+    
+    typewriterEffect(dialoguePages[currentPage], () => {
+      // Show continue indicator after typing finishes
+      if (currentPage < dialoguePages.length - 1) {
+        continueIndicator.style.display = 'block';
+      } else {
+        continueIndicator.style.display = 'none';
+      }
+    });
+  }
+}
+
+// Click to advance dialogue or skip typing
+dialogueBox.addEventListener('click', () => {
+  if (isTyping) {
+    // Skip to end of current page
+    clearTimeout(typewriterTimeout);
+    dialogueText.textContent = dialoguePages[currentPage];
+    isTyping = false;
+    
+    // Show continue indicator if there are more pages
+    if (currentPage < dialoguePages.length - 1) {
+      continueIndicator.style.display = 'block';
+    } else {
+      continueIndicator.style.display = 'none';
+    }
+  } else if (currentPage < dialoguePages.length - 1) {
+    currentPage++;
+    showDialoguePage();
+  } else {
+    // Hide dialogue box when finished
+    dialogueBox.classList.remove('visible');
+  }
+});
+
+ws.onmessage = e => {
+  const data = JSON.parse(e.data);
+  
+  // Handle different message types
+  if (data.type === 'chatHistory') {
+    // Load chat history
+    chatHistory.innerHTML = '';
+    data.messages.forEach(msg => {
+      addChatMessage(msg.message, msg.sender, msg.timestamp);
+    });
+    return;
+  }
+  
+  if (data.type === 'newChatMessage') {
+    addChatMessage(data.message, data.sender, data.timestamp);
+    return;
+  }
+
+  // Regular state update
+  const s = data;
+
+  // Update dialogue settings if provided
+  if (s.dialogueSettings) {
+    currentSettings = s.dialogueSettings;
+    applyDialogueBoxStyle(currentSettings);
+  }
+
+  // Update background
+  if (s.background) {
+    bg.style.backgroundImage = `url(${s.background})`;
+  } else {
+    bg.style.backgroundImage = "";
+  }
+
+  // Update character
+  if (s.file) {
+    char.src = `sprites/${s.emotion}/${s.file}`;
+  }
+
+  char.style.transform =
+    `translate(${s.x}px, ${s.y}px) scale(${s.zoom}) translate(-50%, -50%)`;
+  
+  // Update dialogue
+  if (s.dialogue && s.dialogue.trim()) {
+    // Clear any ongoing typewriter effect
+    if (typewriterTimeout) {
+      clearTimeout(typewriterTimeout);
+    }
+    
+    dialoguePages = splitDialogueIntoPages(s.dialogue, currentSettings);
+    currentPage = 0;
+    dialogueBox.classList.add('visible');
+    showDialoguePage();
+  } else if (s.dialogue === null || s.dialogue === '') {
+    if (typewriterTimeout) {
+      clearTimeout(typewriterTimeout);
+    }
+    dialogueBox.classList.remove('visible');
+    dialoguePages = [];
+    currentPage = 0;
+    isTyping = false;
+  }
+};
+</script>
+
+</body>
+</html>
