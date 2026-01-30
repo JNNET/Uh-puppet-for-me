@@ -407,6 +407,7 @@ let typeSoundAudio = null;
 
 // Presence detection
 let isViewerActive = true;
+let isControllerActive = true;
 let presenceInterval;
 
 // Sound effects
@@ -730,11 +731,11 @@ function handleWebSocketMessage(e) {
     }
     
     if (data.type === 'presenceState') {
-      if (!data.data.controllerActive) {
-        char.style.filter = 'brightness(0.3) grayscale(0.5)';
+      isControllerActive = data.data.controllerActive;
+      // Don't override filter here - lighting is handled by visualState
+      if (!isControllerActive) {
         char.style.opacity = '0.5';
       } else {
-        char.style.filter = 'brightness(1) grayscale(0)';
         char.style.opacity = '1';
       }
       return;
@@ -755,7 +756,7 @@ function handleWebSocketMessage(e) {
         // Start with base filters
         let filterString = `brightness(${brightness}) contrast(${contrast})`;
         
-        // Apply color tint if intensity > 0
+        // Apply color tint as a filter (not glow) if intensity > 0
         if (lighting.tintIntensity > 0) {
           const tintColor = lighting.tintColor || '#ffffff';
           const intensity = lighting.tintIntensity / 100;
@@ -765,17 +766,11 @@ function handleWebSocketMessage(e) {
           const g = parseInt(tintColor.slice(3, 5), 16);
           const b = parseInt(tintColor.slice(5, 7), 16);
           
-          // Calculate hue rotation and saturation adjustments
-          // This creates a colored lighting effect
+          // Use sepia as base for tinting, then hue-rotate to get the right color
           const hueShift = Math.atan2(Math.sqrt(3) * (g - b), 2 * r - g - b) * 180 / Math.PI;
-          const saturation = 100 + (intensity * 100);
+          const sepiaAmount = intensity * 100;
           
-          filterString += ` hue-rotate(${hueShift}deg) saturate(${saturation}%)`;
-          
-          // Add colored glow for ambient light effect
-          const glowIntensity = Math.floor(intensity * 128);
-          const shadowColor = `rgba(${r}, ${g}, ${b}, ${intensity * 0.6})`;
-          filterString += ` drop-shadow(0 0 30px ${shadowColor})`;
+          filterString += ` sepia(${sepiaAmount}%) hue-rotate(${hueShift}deg) saturate(150%)`;
         }
         
         char.style.filter = filterString;
